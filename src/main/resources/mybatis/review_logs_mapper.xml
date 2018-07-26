@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.ReviewLogsMapper" >
+    <!--  selectByReviewList  -->
+    <select id="selectByReviewList" resultType="cn.mc.core.dataObject.work.ReviewLogsStatsDO">
+        <!-- 按天 -->
+        <if test="type == 0">
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS createDay, news_type AS newsType, `type`, `status`, COUNT(*) AS `count`
+            FROM (
+                SELECT * FROM (
+                    SELECT * FROM review_logs
+                    WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+                    ORDER BY f_id DESC
+                ) a
+                GROUP BY news_id, news_type, `type`, STATUS
+            ) temp
+            WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d'), news_type, `type`, `status`
+        </if>
+        <!-- 小时 -->
+        <if test="type == 1">
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS createDay, DATE_FORMAT(create_time, '%H') AS `hour`, news_type AS newsType, `type`, `status`, COUNT(*) AS `count`
+            FROM (
+                SELECT * FROM (
+                    SELECT * FROM review_logs
+                    WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+                    ORDER BY f_id DESC
+                ) a
+                GROUP BY news_id, news_type, `type`, STATUS
+            ) temp
+            WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d') AND #{hour} = DATE_FORMAT(create_time, '%H')
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d %H'), news_type, `type`, `status`
+        </if>
+    </select>
+
+    <!--  selectByReviewStatsTotal 成功失败总数  -->
+    <select id="selectByReviewStatsTotal" resultType="cn.mc.core.dataObject.work.ReviewLogsStatsDO">
+        <!-- 按天 -->
+        <if test="type == 0">
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS createDay, news_type AS newsType, `type`, `status`, COUNT(*) AS `count`
+            FROM (
+                SELECT * FROM (
+                    SELECT * FROM review_logs
+                    WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+                    ORDER BY f_id DESC
+                ) a
+                GROUP BY news_id, STATUS
+            ) temp
+            WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d'), news_type, `status`
+        </if>
+        <!-- 小时 -->
+        <if test="type == 1">
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS createDay, DATE_FORMAT(create_time, '%H') AS `hour`, news_type AS newsType, `type`, `status`, COUNT(*) AS `count`
+            FROM (
+                SELECT * FROM (
+                    SELECT * FROM review_logs
+                    WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+                    ORDER BY f_id DESC
+                ) a
+                GROUP BY news_id, STATUS
+            ) temp
+            WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d') AND #{hour} = DATE_FORMAT(create_time, '%H')
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d %H'), news_type, `status`
+        </if>
+    </select>
+
+    <!--  selectByReviewScene 暴恐、涉黄 成功、失败数 -->
+    <select id="selectByReviewScene" resultType="cn.mc.core.dataObject.work.ReviewLogsStatsDO">
+        <!-- 按天 -->
+        <if test="type == 0">
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS createDay, news_type AS newsType, `status`, COUNT(*) AS `count`
+            FROM (
+                SELECT * FROM (
+                    SELECT * FROM review_logs
+                    WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+                    ORDER BY f_id DESC
+                ) a
+                GROUP BY news_id, news_type, `type`, STATUS
+            ) temp
+            <bind name="pattern" value="'%' + scene + '%'" />
+            WHERE result_code = 200 AND scene LIKE #{pattern} AND #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d'), news_type, `status`
+        </if>
+        <!-- 小时 -->
+        <if test="type == 1">
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS createDay, DATE_FORMAT(create_time, '%H') AS `hour`, news_type AS newsType, `status`, COUNT(*) AS `count`
+            FROM (
+                SELECT * FROM (
+                    SELECT * FROM review_logs
+                    WHERE #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d')
+                    ORDER BY f_id DESC
+                ) a
+                GROUP BY news_id, news_type, `type`, STATUS
+            ) temp
+            <bind name="pattern" value="'%' + scene + '%'" />
+            WHERE result_code = 200 AND scene LIKE #{pattern} AND #{createDay} = DATE_FORMAT(create_time, '%Y-%m-%d') AND #{hour} = DATE_FORMAT(create_time, '%H')
+            GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d %H'), news_type, `status`
+        </if>
+    </select>
+</mapper>

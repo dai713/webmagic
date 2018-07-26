@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.ReviewMapper" >
+
+    <!--  insert  -->
+    <insert id="insertReviewFail">
+        insert into news
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+    <!--  insert  -->
+    <insert id="insertReviewTaskVideo">
+        insert into review_task_video
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <select id="getQuestionAnswerImg"  resultType="String">
+            SELECT t1.content from news_content_answer t1
+                    where news_id=#{newsId}
+            union
+            SELECT t.image_url from news_question_answer_image t
+                    where t.news_content_answer_id in (SELECT t1.news_content_answer_id from news_content_answer t1 where news_id=#{newsId})
+            union
+           SELECT t1.avatar_url from news_question_answer_user t1
+                    where t1.news_question_answer_user_id in (SELECT t.user_id from news_content_answer t where t.news_id=#{newsId})
+            UNION
+            SELECT t1.image_url from news_content_question_image t1
+                    where t1.news_content_question_id in (SELECT t.news_content_question_id from news_content_question t where t.news_id=#{newsId})
+    </select>
+
+    <select id="getQuestionAnswerText"  resultType="String">
+        SELECT t1.content from news_content_answer t1
+        where news_id=#{newsId}
+        union
+        SELECT t.title from news_content_question t
+        where t.news_id=#{newsId}
+    </select>
+
+    <select id="getTaskVideoByNewsId" resultType="int">
+           SELECT count(*) from review_task_video where news_id=#{newsId}
+            <if test="null!=newsId">
+                and status=#{status}
+            </if>
+
+    </select>
+    <select id="getDuanziImg"  resultType="String">
+        SELECT t1.image_url from news_image t1 where news_id=#{newsId}
+        union
+        SELECT t.avatar_url from news_section_user t where t.news_id=#{newsId}
+        union
+        SELECT t1.article from news_content_article t1 where t1.news_id=#{newsId}
+    </select>
+
+    <select id="getReviewTaskVideo" resultType="cn.mc.core.dataObject.ReviewTaskVideoDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM review_task_video
+        WHERE status=0 AND <![CDATA[ create_time > DATE_SUB(NOW(),INTERVAL 4 HOUR)]]>
+    </select>
+
+    <update id="deleteFourHourTask">
+        DELETE from review_task_video where t_id in(
+        SELECT ta.tid from
+        (
+        select t.t_id as tid from review_task_video t where <![CDATA[ t.create_time < DATE_SUB(NOW(),INTERVAL 4 HOUR)]]>
+        )
+        as ta
+        )
+    </update>
+
+    <update id="updateTaskVideo">
+        UPDATE review_task_video
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE t_id = #{tId}
+    </update>
+
+    <resultMap type="java.util.Map" id="keyResultMap" >
+        <result  property="keyword" column="keyword" jdbcType="BLOB"  typeHandler="org.apache.ibatis.type.BlobTypeHandler"/>
+    </resultMap>
+
+    <select id="selectKeyWords"   resultMap="keyResultMap">
+            SELECT keyword from filter_keyword
+    </select>
+</mapper>

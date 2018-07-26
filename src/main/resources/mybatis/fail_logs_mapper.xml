@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.FailLogsMapper" >
+
+    <!--  insert  -->
+    <insert id="insert">
+        insert into fail_logs
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!-- select list   -->
+    <select id="selectList" resultType="cn.mc.core.dataObject.logs.FailLogsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM fail_logs
+        ORDER BY state ASC, add_time DESC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
+</mapper>

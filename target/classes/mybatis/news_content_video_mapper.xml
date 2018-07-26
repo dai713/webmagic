@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.NewsContentVideoMapper" >
+
+    <!--  insert  -->
+    <insert id="insert">
+        insert into news_content_video
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <select id="selectContentVideoById" resultType="cn.mc.core.dataObject.NewsContentVideoDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news_content_video
+        WHERE news_id = #{newsId}
+    </select>
+
+    <!-- 新增视频 -->
+    <insert id="insertVideo" parameterType="java.util.List">
+        insert into news_content_video
+        (news_content_video_id,
+        news_id,
+        data_key,
+        video_size,
+        video_url,
+        file_url,
+        duration_time,
+        video_image,
+        video_image_height,
+        video_image_width,
+        video_format,
+        video_introduce,
+        auth_access,
+        status)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.newsContentVideoId}, #{item.newsId}, #{item.dataKey}, #{item.videoSize}, #{item.videoUrl}, #{item.fileUrl}, #{item.durationTime},
+            #{item.videoImage}, #{item.videoImageHeight}, #{item.videoImageWidth}, #{item.videoFormat}, #{item.videoIntroduce}, #{item.authAccess}, #{item.status})
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,118 @@
+
+# port
+server:
+  port: 7001
+  context-path: /
+  tomcat:
+    uri-encoding: UTF-8
+
+
+# banner
+banner:
+  location: banner/banner.text
+
+# spring
+spring:
+  application:
+    name: scheduler
+  profiles:
+    active: prod
+  http:
+    encoding:
+      charset: UTF-8
+  freemarker:
+    charset: UTF-8
+  aop:
+    auto: true
+  redis:
+    database: 0
+    host: r-bp1d57851da14994.redis.rds.aliyuncs.com
+    port: 6379
+    password: 50C5253a2d77
+    ssl: false
+    pool:
+      max-active: 20
+      max-idle: 20
+      max-wait: 10
+      min-idle: 2
+
+# customer datasource
+datasource:
+  druid:
+    app:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-bp1s1k9dmuwu5jr0y.mysql.rds.aliyuncs.com:3306/app?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: app_e26e
+      password: D0Defcce43e8b6dc
+    scheduler:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-bp1s1k9dmuwu5jr0y.mysql.rds.aliyuncs.com:3306/scheduler?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: scheduler_ccc5
+      password: A4399bd365fc
+    logs:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-bp1s1k9dmuwu5jr0y.mysql.rds.aliyuncs.com:3306/logs?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: logs_534e
+      password: 42AD5dc867cd
+    admin:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-bp1s1k9dmuwu5jr0y.mysql.rds.aliyuncs.com:3306/admin_4eb4?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: admin_4a2c
+      password: EB0686bee4f1
+
+# mybatis
+mybatis:
+  mapper-locations: classpath*:mybatis/*_mapper.xml
+  type-aliases-package: cn.mc.core.dataObject
+  type-handlers-package: cn.mc.scheduler.mapper
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+    cache-enabled: true
+    local-cache-scope: session
+    caches: true
+    incomplete-cache-refs: true
+
+# 关闭认证
+management:
+  security:
+    enabled: true
+
+#定时器配置
+scheduler:
+  oss:
+    end-point: oss-cn-hangzhou-internal.aliyuncs.com
+    access-key-id: LTAIcxAcrws2d6nx
+    access-key-secret: jyj4aDPKfUsXKkPQnt4sWWRIIfz5wb
+    bucket-name: browser-file
+    build-url: https://b-i-f.mc.cn/
+
+# 阿里云 内容安全过滤
+text-filter:
+  security:
+     region-id: cn-shanghai
+     access-key-id: LTAIeHzEswlqwgGj
+     access-key-secret: WFvzRcmsnmi1N1zkjXGuNSiSFBwqlS
+
+# 图片审核服务
+sys:
+  video-image-review-server: http://127.0.0.1:8084
+  mq:
+    news-review:
+      access-key-id: LTAIGXjgALazgOde
+      access-key-secret: VSs60IJn3fKjTXX6zt4fAbAbmbViyd
+      ons-addr: http://onsaddr-internet.aliyun.com/rocketmq/nsaddr4client-internet
+      topic: BR_NEWS_REVIEW
+      producer-id: PID_BR_NEWS_REVIEW
+      consumer-id: CID_BR_NEWS_REVIEW
+
+# logging
+logging:
+  file: logs/scheduler.log
+  config: classpath:logback-spring.xml
+  level:
+    ROOT: ERROR
+    cn.mc: ERROR
+    org.springframework: INFO
+    cn.mc.scheduler.mapper: INFO

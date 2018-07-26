@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.NewsMapper" >
+
+    <!--  insert  -->
+    <insert id="insert">
+        insert into news
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!--  update  -->
+    <update id="updateById">
+        UPDATE news
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE news_id = #{newsId}
+    </update>
+
+    <!--  selectById  -->
+    <select id="selectById" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        WHERE news_id = #{newsId}
+    </select>
+
+    <!--
+        根据多个： dataKeys 查询新闻 并且 > addTime
+    -->
+    <select id="selectByDataKeysGtAddTime" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        WHERE
+        data_key IN
+        <foreach collection="dataKeys" item="dataKey" open="(" close=")" separator=",">
+            #{dataKey}
+        </foreach>
+    </select>
+
+    <!--
+        根据单个： dataKeys 查询新闻 并且 > addTime
+    -->
+    <select id="selectByDataKeyGtAddTime" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        WHERE add_time &gt; #{addTime}
+        AND data_key = #{dataKey}
+    </select>
+
+
+    <!-- selectListByTypeAndState   -->
+    <sql id="selectByTypeAndStateWhere">
+        WHERE news_state = #{newsState}
+        AND news_type = #{newsType}
+    </sql>
+    <select id="selectListByTypeAndState" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        <include refid="selectByTypeAndStateWhere" />
+        ORDER BY news_hot, news_time DESC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
+
+
+    <!-- 将新闻列表插入数据库-->
+    <insert id="insertNews" parameterType="java.util.List" >
+        INSERT INTO news
+            (news_id, data_key, recommend_answer_id, title, news_hot, news_url, news_source, news_source_url, news_type,
+            content_type, keywords, ban_comment, comment_count, news_abstract, display_time, video_count, share_url, share_count, image_count,
+            collect_count, qa_count, play_count, like_count, display_type, news_group, news_state, create_time, add_time, source_comment_count)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.newsId},#{item.dataKey},#{item.recommendAnswerId},#{item.title},#{item.newsHot},#{item.newsUrl},#{item.newsSource},#{item.newsSourceUrl},#{item.newsType},
+            #{item.contentType},#{item.keywords},#{item.banComment},#{item.commentCount},#{item.newsAbstract},#{item.displayTime},#{item.videoCount},#{item.shareUrl},#{item.shareCount},#{item.imageCount},
+            #{item.collectCount},#{item.qaCount},#{item.playCount},#{item.likeCount},#{item.displayType},#{item.newsGroup},#{item.newsState},#{item.createTime},#{item.addTime},#{item.sourceCommentCount})
+        </foreach>
+    </insert>
+
+    <select id="selectTopCommentSource" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        WHERE news_state=#{newsState}
+        <if test="null!=newsType and newsType==1">
+            AND news_type IN (0,1,5,6,7,8)
+        </if>
+        <if test="null!=newsType and newsType==2">
+            AND news_type=20
+        </if>
+           ORDER BY add_time desc LIMIT 20
+    </select>
+
+
+</mapper>

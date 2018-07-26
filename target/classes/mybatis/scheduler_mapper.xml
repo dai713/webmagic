@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.SchedulerMapper" >
+
+    <!--  insert  -->
+    <insert id="insert">
+        insert into scheduler
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!--  update by id  -->
+    <update id="updateById">
+        UPDATE scheduler
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <when test='key.indexOf("+") != -1 || key.indexOf("-") != -1'>
+                    ${key} #{value}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE id = #{id}
+    </update>
+
+    <!--  updateByTriggerNameAndTriggerType -->
+    <update id="updateByJobNameAndJobGroup">
+        UPDATE scheduler
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE job_name = #{jobName}
+        AND job_group = #{jobGroup}
+    </update>
+
+
+    <!--  select list  -->
+    <sql id="selectListWhere">
+        WHERE 0 = 0
+        AND status != 'REMOVE'
+        <if test="query.status != null and query.status != ''">
+            AND status = #{query.status}
+        </if>
+        <if test="query.jobName != null and query.jobName != ''">
+            <bind name="jobNamePattern" value="'%' + query.jobName + '%'" />
+            AND job_name LIKE #{jobNamePattern}
+        </if>
+    </sql>
+    <select id="selectList" resultType="cn.mc.core.dataObject.scheduler.SchedulerDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM scheduler
+        <include refid="selectListWhere" />
+        ORDER BY add_time DESC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
+
+    <select id="selectListCount" resultType="java.lang.Long">
+        SELECT
+        COUNT(*)
+        FROM scheduler
+        <include refid="selectListWhere" />
+    </select>
+
+    <!--  selectByJobNameAndJobGroup -->
+    <select id="selectByJobNameAndJobGroup" resultType="cn.mc.core.dataObject.scheduler.SchedulerDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM scheduler
+        WHERE job_name = #{jobName}
+        AND job_group = #{jobGroup}
+        AND status != 'REMOVE'
+    </select>
+</mapper>

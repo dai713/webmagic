@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.FilterWordMapper" >
+
+
+    <!--
+
+        分页 limit
+
+    -->
+    <select id="listLimit" resultType="cn.mc.core.dataObject.work.FilterWordDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM filter_word
+        WHERE status = #{status}
+        ORDER BY id DESC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
+
+    <!--
+
+        查询所欲
+
+    -->
+    <select id="listAll" resultType="cn.mc.core.dataObject.work.FilterWordDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM filter_word
+        WHERE status = #{status}
+        ORDER BY id DESC
+    </select>
+</mapper>

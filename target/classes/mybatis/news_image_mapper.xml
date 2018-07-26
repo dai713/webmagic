@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.NewsImageMapper" >
+
+    <!--  insert  -->
+    <insert id="insert">
+        insert into news_image
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!--新增新闻列表图片-->
+    <insert id="insertNewsImage" parameterType="java.util.List">
+        INSERT INTO news_image (news_image_id, news_id, image_width, image_height, image_type, image_url, status)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.newsImageId},#{item.newsId},#{item.imageWidth},#{item.imageHeight},#{item.imageType},#{item.imageUrl},#{item.status})
+        </foreach>
+    </insert>
+
+    <select id="selectNewsImage" resultType="cn.mc.core.dataObject.NewsImageDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news_image
+        WHERE news_id = #{newsId}
+    </select>
+
+</mapper>

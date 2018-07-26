@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.StatsNewsCreateHourMapper" >
+    <!--  update  -->
+    <update id="updateById" parameterType="cn.mc.core.dataObject.work.StatsNewsCreateHourDO">
+        INSERT INTO stats_news_create_hour(create_day, `hour`, news_type, success_count, error_count, video_success_count, video_error_count, image_success_count, image_error_count, keyword_success_count
+          , keyword_error_count, wrong_success_count, wrong_error_count, terrorism_success_count, terrorism_error_count, porn_success_count, porn_error_count)
+        VALUES('${statsNews.createDay}', ${statsNews.hour}, ${statsNews.newsType}, ${statsNews.successCount}, ${statsNews.errorCount}, ${statsNews.videoSuccessCount}, ${statsNews.videoErrorCount}
+        , ${statsNews.imageSuccessCount}, ${statsNews.imageErrorCount}, ${statsNews.keywordSuccessCount}
+        , ${statsNews.keywordErrorCount}, ${statsNews.wrongSuccessCount}, ${statsNews.wrongErrorCount}, ${statsNews.terrorismSuccessCount}, ${statsNews.terrorismErrorCount}
+        , ${statsNews.pornSuccessCount}, ${statsNews.pornErrorCount})
+        ON DUPLICATE KEY UPDATE success_count = success_count + ${statsNews.successCount}, error_count = error_count + ${statsNews.errorCount}
+        , video_success_count = video_success_count + ${statsNews.videoSuccessCount}, video_error_count = video_error_count + ${statsNews.videoErrorCount}
+        , image_success_count = image_success_count + ${statsNews.imageSuccessCount}, image_error_count = image_error_count + ${statsNews.imageErrorCount}
+        , keyword_success_count = keyword_success_count + ${statsNews.keywordSuccessCount}, keyword_error_count = keyword_error_count + ${statsNews.keywordErrorCount}
+        , wrong_success_count = wrong_success_count + ${statsNews.wrongSuccessCount}, wrong_error_count = wrong_error_count + ${statsNews.wrongErrorCount}
+        , terrorism_success_count = terrorism_success_count + ${statsNews.terrorismSuccessCount}, terrorism_error_count = terrorism_error_count + ${statsNews.terrorismErrorCount}
+        , porn_success_count = porn_success_count + ${statsNews.pornSuccessCount}, porn_error_count = porn_error_count + ${statsNews.pornErrorCount}
+    </update>
+
+</mapper>

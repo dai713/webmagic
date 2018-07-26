@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.KeywordsLogsMapper" >
+    
+    <!-- 新增 -->
+    <insert id="insert" parameterType="cn.mc.core.dataObject.logs.KeywordsLogsDO" >
+        INSERT INTO keywords_logs (
+            id,
+            news_id,
+            keywords,
+            content,
+            content_type,
+            validate_type,
+            create_time)
+        VALUES
+            (#{id}, #{newsId}, #{keywords}, #{content}, #{contentType}, #{validateType}, NOW())
+    </insert>
+</mapper>

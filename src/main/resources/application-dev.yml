@@ -1,0 +1,142 @@
+
+# port
+server:
+  port: 7001
+  context-path: /
+  tomcat:
+    uri-encoding: UTF-8
+
+
+# banner
+banner:
+  location: banner/banner.text
+
+# spring
+spring:
+  application:
+    name: scheduler
+  profiles:
+    active: dev
+  http:
+    encoding:
+      charset: UTF-8
+  freemarker:
+    charset: UTF-8
+  aop:
+    auto: true
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    password:
+    ssl: false
+    pool:
+      max-active: 20
+      max-idle: 20
+      max-wait: 10
+      min-idle: 2
+
+# customer datasource
+datasource:
+  druid:
+    app:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+#      url: jdbc:mysql://127.0.0.1:3306/app?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+ #     username: 'root'
+ #     password: 'root123'
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/appnew?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'app_83e50af'
+      password: '5d0182f544aa814'
+#      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/appnew?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+#      username: 'appnew_48af'
+#      password: '5234dou44814'
+    scheduler:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/scheduler?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+    logs:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/logs?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+    admin:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/admin?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+
+# mybatis
+mybatis:
+  mapper-locations: classpath*:mybatis/*_mapper.xml
+  type-aliases-package: cn.mc.core.dataObject
+  type-handlers-package: cn.mc.scheduler.mapper
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+    cache-enabled: true
+    local-cache-scope: session
+    caches: true
+    incomplete-cache-refs: true
+
+
+# swagger
+swagger:
+  enabled: true
+  docket:
+    browser:
+      title: browser 内容
+      description: 爱思浏览器 API 服务
+      version: 1.0.RELEASE
+      base-package: cn.mc.app
+      base-path: /**
+      exclude-path: /error, /ops/**
+      globalOperationParameters[0]:
+        name: System-Context
+        description: 系统上下文
+        modelRef: string
+        parameterType: header
+
+# 关闭认证
+management:
+  security:
+    enabled: false
+
+# 阿里云 OSS
+scheduler:
+  oss:
+    end-point: oss-cn-shenzhen.aliyuncs.com
+    access-key-id: LTAI49FS0sYZA4I2
+    access-key-secret: nJtYcOsjpM5MwCZ41vJqqO6y0TLaNE
+    bucket-name: mc-browser
+    build-url: https://mc-browser.oss-cn-shenzhen.aliyuncs.com
+
+# 阿里云 内容安全过滤
+text-filter:
+  security:
+     region-id: cn-shanghai
+     access-key-id: LTAIff1GpmML8lca
+     access-key-secret: 3irN5km15Edet1YLEkYnr9SJXI2pjJ
+
+# 图片审核服务
+sys:
+  video-image-review-server: http://127.0.0.1:8084
+  mq:
+    news-review:
+      access-key-id: LTAIGXjgALazgOde
+      access-key-secret: VSs60IJn3fKjTXX6zt4fAbAbmbViyd
+      ons-addr: http://onsaddr-internet.aliyun.com/rocketmq/nsaddr4client-internet
+      topic: BR_NEWS_REVIEW_TEST
+      producer-id: PID_BR_NEWS_REVIEW_TEST
+      consumer-id: CID_BR_NEWS_REVIEW_TEST
+
+# logging
+logging:
+  file: logs/scheduler.log
+  config: classpath:logback-spring.xml
+  level:
+    ROOT: INFO
+    cn.mc: INFO
+    org.springframework: INFO
+    cn.mc.scheduler.mapper: DEBUG

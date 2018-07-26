@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.NewsQuestionAnswerUserMapper" >
+
+    <!--  insert  -->
+    <insert id="insert">
+        insert into news_question_answer_user
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!--  select data keys  -->
+    <select id="selectByDataKeys" resultType="cn.mc.core.dataObject.NewsQuestionAnswerUserDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news_question_answer_user
+        WHERE
+        data_key IN
+        <foreach collection="dataKeys" item="dataKey" open="(" close=")" separator=",">
+            #{dataKey}
+        </foreach>
+    </select>
+</mapper>

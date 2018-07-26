@@ -1,29 +1,34 @@
-# webmagic
+![logo](http://webmagic.io/images/logo.jpeg)
 
-#### 项目介绍
-基于第三方爬虫工具webmagic实现对腾讯、新浪、今日头条等多家新闻媒体的新闻数据抓取
-
-#### 软件架构
-软件架构说明
+[Readme in Chinese](https://github.com/code4craft/webmagic/tree/master/README-zh.md)
 
 
-#### 安装教程
+[![Build Status](https://travis-ci.org/code4craft/webmagic.png?branch=master)](https://travis-ci.org/code4craft/webmagic)
 
-1. xxxx
-2. xxxx
-3. xxxx
+>A scalable crawler framework. It covers the whole lifecycle of crawler: downloading, url management, content extraction and persistent. It can simplify the development of a  specific crawler.
 
-#### 使用说明
+## Features:
 
-1. xxxx
-2. xxxx
-3. xxxx
+* Simple core with high flexibility.
+* Simple API for html extracting.
+* Annotation with POJO to customize a crawler, no configuration.
+* Multi-thread and Distribution support.
+* Easy to be integrated.
 
-#### 参与贡献
+## Install:
+  
+Add dependencies to your pom.xml:
 
-1. Fork 本项目
-2. 新建 Feat_xxx 分支
-3. 提交代码
-4. 新建 Pull Request
-
+```xml
+<dependency>
+    <groupId>us.codecraft</groupId>
+    <artifactId>webmagic-core</artifactId>
+    <version>0.7.3</version>
+</dependency>
+<dependency>
+    <groupId>us.codecraft</groupId>
+    <artifactId>webmagic-extension</artifactId>
+    <version>0.7.3</version>
+</dependency>
+```
 

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.PaperMapper" >
+
+    <!--
+        insert paper
+    -->
+    <insert id="insert">
+        INSERT INTO paper
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!--
+           更新 - 根据 id
+       -->
+    <update id="updateById">
+        UPDATE paper
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE `id` = #{id}
+    </update>
+
+    <!--
+        更新 - 根据 pageName
+    -->
+    <update id="updateByPageName">
+        UPDATE paper
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE `page_name` = #{pageName}
+    </update>
+
+    <!--
+        获取 list - 根据 page
+    -->
+    <select id="listPaperPage" resultType="cn.mc.core.dataObject.paper.PaperDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM paper
+        WHERE `status` = #{status}
+        ORDER BY `id` ASC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
+
+    <!--
+        获取 count
+    -->
+    <select id="getPaperCount" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*)
+        FROM paper
+        WHERE `status` = #{status}
+    </select>
+
+    <!--
+        获取 get last
+    -->
+    <select id="getLastPaper" resultType="cn.mc.core.dataObject.paper.PaperDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM paper
+        ORDER BY paper_number DESC
+        LIMIT 0, 1
+    </select>
+</mapper>

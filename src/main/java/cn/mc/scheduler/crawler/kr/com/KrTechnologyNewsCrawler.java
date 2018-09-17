@@ -170,12 +170,20 @@ public class KrTechnologyNewsCrawler extends BaseCrawler {
             String dataKey = getDataKey(url);
             Html html = page.getHtml();
 
+            // 获取 title ，36氪 存在 title 和内容不对的情况，二次处理 title
+            String title = html.xpath("//div[@class='mobile_article']/h1/allText()").toString();
+            if (!StringUtils.isEmpty(title)) {
+                NewsDO newsDO = cacheNewsDO.get(dataKey);
+                newsDO.setTitle(title);
+            }
+
+            // 获取 content
             String htmlText = html.toString();
             String contentRegex = "\"content\"(.*?),\"cover\"";
             String content = getSubUtilSimple(htmlText, contentRegex);
 
-            String summaryRegex = "\"summary\"(.*?),\"content\"";
-            String summary = getSubUtilSimple(htmlText, summaryRegex);
+//            String summaryRegex = "\"summary\"(.*?),\"content\"";
+//            String summary = getSubUtilSimple(htmlText, summaryRegex);
 
             // 获取 content
             if (StringUtils.isEmpty(content)) {
@@ -195,15 +203,15 @@ public class KrTechnologyNewsCrawler extends BaseCrawler {
 
             // 1、截取内容 2、a 标签替换 div
             content = content.substring(2, content.length() -1)
-                    .replaceAll("\\\\", "")
+                    .replaceAll("\\\\n", "").replaceAll("\\\\","")
                     .replaceAll("<a","<div")
                     .replaceAll("a>","div>");
 
-            // 如果 summary 是空的，则在头部加上这个 内容
-            if (!StringUtils.isEmpty(summary)) {
-                content = "<p class=\"summary\">"
-                        + summary.substring(2, summary.length() -1) + "</p>" + content;
-            }
+//            // 如果 summary 是空的，则在头部加上这个 内容
+//            if (!StringUtils.isEmpty(summary)) {
+//                content = "<p class=\"summary\">"
+//                        + summary.substring(2, summary.length() -1) + "</p>" + content;
+//            }
 
             // 去保存数据
             krTechnologyNewsCrawlerPipeline.saveKrTechnologyNews(

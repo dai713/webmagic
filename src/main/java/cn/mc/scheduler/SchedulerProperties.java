@@ -65,4 +65,22 @@ public class SchedulerProperties {
      */
     @Value("${sys.video-image-review-server}")
     public String videoImageReviewServer;
+
+    /**
+     * 清除缓存 app服务地址
+     */
+    @Value("${sys.server.url}")
+    public String clearCacheAppServer;
+
+    /**
+     * 关键字 - 替换
+     */
+    @Value("${sys.systemKeywords.replace-keywords}")
+    public String replace;
+
+    /**
+     * 关键字 - 匹配
+     */
+    @Value("${sys.systemKeywords.matched-keywords}")
+    public String matched;
 }

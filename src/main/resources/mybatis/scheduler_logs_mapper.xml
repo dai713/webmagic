@@ -39,4 +39,23 @@
         </foreach>
     </insert>
 
+    <insert id="insertReviewFailLog">
+        insert into review_fail
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+
 </mapper>

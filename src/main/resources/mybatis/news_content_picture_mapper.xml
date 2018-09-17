@@ -24,9 +24,34 @@
     <!--新增大图新闻-->
     <insert id="insertPicture" parameterType="cn.mc.core.dataObject.NewsContentPictureDO">
         INSERT INTO news_content_picture
-          (news_content_picture_id, news_id, `order`, image_url, image_height, image_width, `describe`, status)
+          (news_content_picture_id, news_id, order, image_url, image_height, image_width, describe, status)
         VALUES
           (#{newsContentPictureId},#{newsId},#{order},#{imageUrl},#{imageHeight},#{imageWidth},#{describe},#{status})
+    </insert>
+
+    <!-- 新增大图新闻列表 -->
+    <insert id="insertPictureList" parameterType="java.util.List">
+        INSERT INTO news_content_picture
+          (news_content_picture_id,
+            news_id,
+            `order`,
+            image_url,
+            image_height,
+            image_width,
+            `describe`,
+            status)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.newsContentPictureId},
+            #{item.newsId},
+            #{item.order},
+            #{item.imageUrl},
+            #{item.imageHeight},
+            #{item.imageWidth},
+            #{item.describe},
+            #{item.status})
+        </foreach>
+
     </insert>
 
     <select id="listPicture" resultType="cn.mc.core.dataObject.NewsContentPictureDO">

@@ -21,8 +21,6 @@ public class ToutiaoIndexInfoTest {
     @Autowired
     private ToutiaoFunnyCrawler toutiaoFunnyCrawler;
 
-    @Autowired
-    private AliyunOSSClientUtil aliyunOSSClientUtil;
 
     /**
      * 今日头条-推荐栏目新闻爬取数据测试
@@ -48,12 +46,6 @@ public class ToutiaoIndexInfoTest {
         toutiaoFunnyCrawler.createCrawler().thread(3).run();
     }
 
-    @Test
-    public void upload() {
-        String url = "http://img05.tooopen.com/images/20150820/tooopen_sy_139205349641.jpg";
-        String result = aliyunOSSClientUtil.uploadPicture(url);
-        System.out.println("上传后返回url：" + result);
-    }
 
     public static void main(String[] args) {
         String str = "问答";

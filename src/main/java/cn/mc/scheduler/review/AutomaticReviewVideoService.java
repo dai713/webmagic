@@ -131,15 +131,15 @@ public class AutomaticReviewVideoService {
         if (reviewResult == true) {
             //根据newsId查询视频对象
             List<NewsContentVideoDO> listVideo = newsContentVideoMapper.selectContentVideoById(news.getNewsId(), new Field());
-            for (NewsContentVideoDO newsContent : listVideo) {
-                String url=newsContent.getFileUrl();
+            for (NewsContentVideoDO contentVideo : listVideo) {
+                String url=contentVideo.getFileUrl();
                 //如果需要授权
-                if(newsContent.getAuthAccess()==1){
+                if(contentVideo.getAuthAccess()==1){
                     //根据datakey获取鉴权的视频url
-                    url = authVideoService.authVideoService(newsContent.getDataKey());
+                    url = authVideoService.authVideoService(contentVideo.getDataKey());
                 }
                 try {
-                    reviewResult= checkVideoClient.checkVideoUrl(url);
+                    reviewResult= checkVideoClient.checkVideoUrl(url,news.getNewsId());
                 }catch (Exception ex){
                     ex.printStackTrace();
                     reviewResult=false;
@@ -194,7 +194,7 @@ public class AutomaticReviewVideoService {
     //图片结果处理的公共方法
     private boolean resultImgProcessing(String content, NewsDO news) {
 
-        boolean result=checkPictureResult(content);
+        boolean result=checkPictureResult(content,news.getNewsId());
         //如果返回都校验失败 则更新news表状态 还有返回的错误信息
         ReviewLogsDO reviewlogDO1 = new ReviewLogsDO();
         reviewlogDO1.setfId(IDUtil.getNewID());
@@ -220,7 +220,7 @@ public class AutomaticReviewVideoService {
         return result;
 
     }
-    private  boolean checkPictureResult(String content){
+    private  boolean checkPictureResult(String content,Long newsId){
         Pattern patternForTag = Pattern.compile (REGXPFORTAG,Pattern. CASE_INSENSITIVE );
         Pattern patternForAttrib = Pattern.compile (REGXPFORTAGATTRIB,Pattern. CASE_INSENSITIVE );
         Matcher matcherForTag = patternForTag.matcher(content);
@@ -233,13 +233,13 @@ public class AutomaticReviewVideoService {
                 String attributeStr = matcherForAttrib.group(1);
                 String imgFilterUrl=new String(attributeStr.replaceAll("amp;","").trim());
                 if (imgFilterUrl.startsWith("http:") || imgFilterUrl.startsWith("https:")) {
-                    boolean resultCheck= checkImgClient.checkImgUrl(imgFilterUrl);
+                    boolean resultCheck= checkImgClient.checkImgUrl(imgFilterUrl,newsId);
                     if(resultCheck==false){
                         return false;
                     }
                 }else { //没有http则默认添加
                     String url="https:"+imgFilterUrl;
-                    boolean resultCheck=  checkImgClient.checkImgUrl(url);
+                    boolean resultCheck=  checkImgClient.checkImgUrl(url,newsId);
                     if(resultCheck==false){
                         return false;
                     }
@@ -253,7 +253,7 @@ public class AutomaticReviewVideoService {
         if(result==false){
             String imgFilterUrl=new String(content.replaceAll("amp;","").trim());
             if (imgFilterUrl.startsWith("http:") || imgFilterUrl.startsWith("https:")) {
-                boolean resultCheck=checkImgClient.checkImgUrl(imgFilterUrl);
+                boolean resultCheck=checkImgClient.checkImgUrl(imgFilterUrl,newsId);
                 return resultCheck;
             }else{ //没有图片校验则直接返回true
                 return true;

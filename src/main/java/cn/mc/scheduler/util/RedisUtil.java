@@ -114,13 +114,34 @@ public class RedisUtil {
         try {
             ValueOperations<Serializable, Object> operations = redisTemplate.opsForValue();
             operations.set(key, value);
+
             result = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return result;
     }
-
+    public  boolean setString(final String key, Object value,int expireTime) {
+        boolean result = false;
+        try {
+            ValueOperations<Serializable, Object> operations = redisTemplate.opsForValue();
+            operations.set(key, value);
+            redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+    public  String getString(final String key) {
+        try {
+            ValueOperations<Serializable, Object> operations = redisTemplate.opsForValue();
+            return (String) operations.get(key);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
     public  boolean hmset(String key, Map<String, String> value) {
         boolean result = false;
         try {

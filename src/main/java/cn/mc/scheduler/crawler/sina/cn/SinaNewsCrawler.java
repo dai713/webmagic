@@ -2,17 +2,20 @@ package cn.mc.scheduler.crawler.sina.cn;
 
 import cn.mc.core.dataObject.NewsDO;
 import cn.mc.core.dataObject.NewsImageDO;
-import cn.mc.core.dataObject.SystemKeywordsDO;
 import cn.mc.core.manager.NewsCoreManager;
 import cn.mc.core.manager.NewsImageCoreManager;
 import cn.mc.core.utils.EncryptUtil;
 import cn.mc.core.utils.IDUtil;
 import cn.mc.scheduler.base.BaseSpider;
 import cn.mc.scheduler.crawler.BaseCrawler;
+import cn.mc.scheduler.util.HtmlNodeUtil;
 import cn.mc.scheduler.util.SchedulerUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -22,13 +25,14 @@ import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.selector.Html;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import us.codecraft.webmagic.selector.HtmlNode;
+import us.codecraft.webmagic.selector.Selectable;
 import java.util.*;
 
 @Component
 public class SinaNewsCrawler extends BaseCrawler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SinaNewsCrawler.class);
 
     private Site site = Site.me().setRetryTimes(3).setSleepTime(500);
 
@@ -39,7 +43,6 @@ public class SinaNewsCrawler extends BaseCrawler {
 
     private static Map<String, List<NewsImageDO>> cacheNewsImageDO = Collections.EMPTY_MAP;
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private  static Integer width = 240;
 
@@ -54,11 +57,9 @@ public class SinaNewsCrawler extends BaseCrawler {
     @Autowired
     private SinaNewsCrawlerPipeline sinaNewsCrawlerPipeline;
 
-    @Autowired
-    private SchedulerUtils schedulerUtils;
-
     private Long timeMillis;
 
+    private  String initUrl;
     @Override
     public synchronized Spider createCrawler() {
         cacheNewsDO = new LinkedHashMap<>();
@@ -66,8 +67,9 @@ public class SinaNewsCrawler extends BaseCrawler {
         timeMillis=System.currentTimeMillis()/1000;
         StringBuffer urlStr=new StringBuffer(URL);
         urlStr.append(timeMillis).append("&offset=9&length=15&dedup=530&cre=techtop&mod=f&app_type=113&cateid=1z&statics=1&merge=3&_=").append(timeMillis);
-        URL=urlStr.toString();
-        Request request = new Request(URL);
+        LOGGER.error("开始抓取新浪新闻:"+urlStr.toString());
+        initUrl=urlStr.toString();
+        Request request = new Request(initUrl);
         request.addHeader(HEADER_USER_AGENT_KEY, USER_AGENT_IPHONE_OS);
         request.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
         request.addHeader("Accept-Encoding", "gzip, deflate");
@@ -85,8 +87,9 @@ public class SinaNewsCrawler extends BaseCrawler {
 
     @Override
     public void process(Page page) {
-        if (URL.contains(page.getUrl().toString())) {
+        if (initUrl.contains(page.getUrl().toString())) {
             String jsonReturn=page.getRawText();
+            LOGGER.error("新浪新闻接口返回数据:"+jsonReturn);
             if(!StringUtils.isEmpty(jsonReturn)){
                 String jsonStr=jsonReturn.replaceAll("jQuery21405203954554129819_"+timeMillis,"");
                 jsonStr=jsonStr.substring(jsonStr.indexOf("(")+1,jsonStr.lastIndexOf(")"));
@@ -186,15 +189,15 @@ public class SinaNewsCrawler extends BaseCrawler {
                     Object time1=jsonDataObject.get("ctime");
                     if(!StringUtils.isEmpty(time)){
                         try {
-                            displayTime=sdf.parse(sdf.format(new Date(Long.parseLong(time.toString())*1000)));
-                        } catch (ParseException e) {
+                            displayTime=new Date(Long.parseLong(time.toString())*1000);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                     if(!StringUtils.isEmpty(time1)){
                         try {
-                            createTime=sdf.parse(sdf.format(new Date(Long.parseLong(time1.toString())*1000)));
-                        } catch (ParseException e) {
+                            createTime=new Date(Long.parseLong(time1.toString())*1000);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -241,15 +244,85 @@ public class SinaNewsCrawler extends BaseCrawler {
             }
             String dataKey = params.get("dataKey");
             Html html = page.getHtml();
-            String content = html.xpath("//div[@class='article']").toString();
+            String content="";
+            List<Selectable> nodes;
 
+            if(url.contains("tech.sina")){
+                nodes= html.xpath("//article[@class='art_box']").nodes();
+            }else if(url.contains("photo.sina.cn")){
+                nodes= html.xpath("//article[@class='s_card']").nodes();
+            }else{
+                nodes = html.xpath("//div[@class='article']").nodes();
+            }
+            LOGGER.error("新浪新闻页面元数据:"+nodes.size());
+            if(nodes.size()<=0){
+                return;
 
+            }
+            Selectable articleNode = nodes.get(0);
+            List<Selectable> imgNodes = articleNode.xpath("//img").nodes();
+            for (Selectable imgNode : imgNodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) imgNode).get(0);
+                if (imgNode.toString().contains("hide")) {
+                    elements.remove();
+                    continue;
+                }
+                if (imgNode.toString().contains("display:none")) {
+                    elements.remove();
+                    continue;
+                }
+                if (imgNode.toString().contains("ET8F-hcscwxc2926796.jpg")) {
+                    elements.remove();
+                    continue;
+                }
+                String dataSrc = elements.attr("data-src");
+                if (!StringUtils.isEmpty(dataSrc)) {
+                    elements.attr("src", dataSrc);
+                }
+            }
+            List<Selectable> h1Nodes = articleNode.xpath("//h1").nodes();
+            for (Selectable h1 : h1Nodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) h1).get(0);
+                elements.remove();
+            }
+            List<Selectable> timeNodes = articleNode.xpath("//time").nodes();
+            for (Selectable time : timeNodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) time).get(0);
+                elements.remove();
+            }
+            List<Selectable> figureNodes = articleNode.xpath("//figure").nodes();
+            for (Selectable figure : figureNodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) figure).get(0);
+                if (figure.toString().contains("weibo_info")) {
+                    elements.remove();
+                }
+            }
+            List<Selectable> divNodes = articleNode.xpath("//div").nodes();
+            for (Selectable div : divNodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) div).get(0);
+                if (div.toString().contains("wx_pic")) {
+                    elements.remove();
+                }
+            }
+            List<Selectable> sectionNodes = articleNode.xpath("//section").nodes();
+            for (Selectable section : sectionNodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) section).get(0);
+                if (section.toString().contains("hide")) {
+                    elements.remove();
+                }
+            }
+            List<Selectable> scriptNodes = articleNode.xpath("//script").nodes();
+            for (Selectable script : scriptNodes) {
+                Element elements = HtmlNodeUtil.getElements((HtmlNode) script).get(0);
+                elements.remove();
+            }
+            content = articleNode.toString();
             if (StringUtils.isEmpty(content)
                     || StringUtils.isEmpty(dataKey)
                     || !cacheNewsDO.containsKey(dataKey)) {
                 return;
             }
-
+            LOGGER.error("新浪新闻页面元数据保存:"+dataKey);
             // 去保存
             sinaNewsCrawlerPipeline.saveSinaNews(dataKey, cacheNewsDO, cacheNewsImageDO, content);
         }

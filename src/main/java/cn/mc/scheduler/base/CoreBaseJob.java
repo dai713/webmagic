@@ -6,20 +6,26 @@ import cn.mc.core.mail.MailUtil;
 import cn.mc.core.mybatis.Update;
 import cn.mc.core.utils.BeanManager;
 import cn.mc.core.utils.IDUtil;
+import cn.mc.core.utils.MessageUtil;
 import cn.mc.scheduler.mapper.FailLogsMapper;
 import cn.mc.scheduler.mapper.SchedulerMapper;
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.quartz.QuartzJobBean;
+import org.springframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.Date;
 
 /**
+ * core baseJob
+ *
  * @auther sin
  * @time 2018/2/2 13:38
  */
@@ -27,16 +33,20 @@ import java.util.Date;
 @DisallowConcurrentExecution
 public abstract class CoreBaseJob extends QuartzJobBean implements Serializable {
 
-    private static final String SUBJECT = "scheduler 异常";
-
-    private static final String[] ERROR_MAIL = new String[]{"cherishsince@aliyun.com", "zhengfa@sh.cool"};
-
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    private static final String SUBJECT = "scheduler 异常";
+    private static final String MAIL_SUBJECT_TEMPLATE = "{active} {subject}";
 
     protected ApplicationContext applicationContext;
 
+    protected Environment environment;
+
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+        this.environment = applicationContext.getBean(Environment.class);
+
+        Assert.notNull(environment, "系统参数 environment 没有注入!");
     }
 
     @Override
@@ -52,7 +62,7 @@ public abstract class CoreBaseJob extends QuartzJobBean implements Serializable 
             // 添加日志
             addLogs(context, ExceptionUtils.getStackTrace(e));
             // 发送邮件
-            MailUtil.sendSystemError(SUBJECT, e.getMessage());
+            sendErrorMail(e);
         } catch (Throwable e) {
             // log下异常
             logger.error("[executeInternal][异常：{}]", ExceptionUtils.getStackTrace(e));
@@ -61,7 +71,7 @@ public abstract class CoreBaseJob extends QuartzJobBean implements Serializable 
             addLogs(context, ExceptionUtils.getStackTrace(e));
 
             // 发送邮件
-            MailUtil.sendSystemError(SUBJECT, e.getMessage());
+            sendErrorMail(e);
 
             // 更新失败
             JobDetail jobDetail = context.getJobDetail();
@@ -77,6 +87,12 @@ public abstract class CoreBaseJob extends QuartzJobBean implements Serializable 
         }
     }
 
+    /**
+     * 添加错误日志
+     *
+     * @param context
+     * @param errorMessage
+     */
     private void addLogs(JobExecutionContext context, String errorMessage) {
         JobDetail jobDetail = context.getJobDetail();
         String jobName = jobDetail.getKey().getName();
@@ -97,5 +113,23 @@ public abstract class CoreBaseJob extends QuartzJobBean implements Serializable 
         failLogsMapper.insert(Update.copyWithoutNull(failLogsDO));
     }
 
+    /**
+     * 发送错误 mail
+     *
+     *  dev 环境不发送错误邮件
+     *
+     *  邮件会根据 spring 具体的 spring.profiles.active 来区分不同环境下的邮件提醒
+     *
+     * @param throwable
+     */
+    private void sendErrorMail(Throwable throwable) {
+        MailUtil.sendSystemError(SUBJECT, ExceptionUtils.getMessage(throwable), environment);
+    }
+
+    /**
+     * 去执行任务
+     *
+     * @param context
+     */
     protected abstract void doProcess(JobExecutionContext context);
 }

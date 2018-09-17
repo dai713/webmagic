@@ -44,15 +44,15 @@ datasource:
 #      url: jdbc:mysql://127.0.0.1:3306/app?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
  #     username: 'root'
  #     password: 'root123'
+#      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/app?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+#      username: 'app_83e50af'
+#      password: '5d0182f544aa814'
       url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/appnew?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
-      username: 'app_83e50af'
-      password: '5d0182f544aa814'
-#      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/appnew?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
-#      username: 'appnew_48af'
-#      password: '5234dou44814'
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
     scheduler:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/scheduler?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/scheduler2?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
       username: 'i4_root'
       password: 'i4@and92bdha1BimcP0dj'
     logs:
@@ -63,6 +63,16 @@ datasource:
     admin:
       driver-class-name: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/admin?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+    paper:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/paper2?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+    comment:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/comment?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
       username: 'i4_root'
       password: 'i4@and92bdha1BimcP0dj'
 
@@ -122,14 +132,19 @@ text-filter:
 # 图片审核服务
 sys:
   video-image-review-server: http://127.0.0.1:8084
+  server:
+      url: http://192.168.1.75:8083
   mq:
     news-review:
       access-key-id: LTAIGXjgALazgOde
       access-key-secret: VSs60IJn3fKjTXX6zt4fAbAbmbViyd
       ons-addr: http://onsaddr-internet.aliyun.com/rocketmq/nsaddr4client-internet
-      topic: BR_NEWS_REVIEW_TEST
-      producer-id: PID_BR_NEWS_REVIEW_TEST
-      consumer-id: CID_BR_NEWS_REVIEW_TEST
+      topic: BR_NEWS_REVIEW_TEST_DEV
+      producer-id: PID_BR_NEWS_REVIEW_TEST_DEV
+      consumer-id: CID_BR_NEWS_REVIEW_TEST_DEV
+  systemKeywords:
+    replace-keywords: replaceKeywords
+    matched-keywords: matcherKeywords
 
 # logging
 logging:
@@ -139,4 +154,4 @@ logging:
     ROOT: INFO
     cn.mc: INFO
     org.springframework: INFO
-    cn.mc.scheduler.mapper: DEBUG
+    cn.mc.scheduler.mapper: INFO

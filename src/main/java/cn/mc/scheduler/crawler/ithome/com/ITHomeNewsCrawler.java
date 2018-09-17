@@ -15,6 +15,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -34,9 +36,11 @@ import java.util.*;
 @Component
 public class ITHomeNewsCrawler extends BaseCrawler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ITHomeNewsCrawler.class);
+
     private Site site = Site.me().setRetryTimes(3).setSleepTime(500);
 
-    private static final String URL = "https://m.ithome.com/api/news/newslistpageget?Tag=news&ot=1528369807000&page=0";
+    private static String URL = "https://m.ithome.com/api/news/newslistpageget?Tag=news&ot=";
 
     private Map<String, NewsDO> cacheNewsDO = Maps.newHashMap();
 
@@ -50,13 +54,18 @@ public class ITHomeNewsCrawler extends BaseCrawler {
     private NewsImageCoreManager newsImageCoreManager;
     @Autowired
     private ITHomeNewsCrawlerPipeline itHomeNewsCrawlerPipeline;
+    //IT之家默认图片宽高
+    private static  Integer width=240;
+    private static Integer high=180;
 
+    private  String initUrl;
     @Override
     public BaseSpider createCrawler() {
-        Request request = new Request(URL);
-        request.setMethod(HttpConstant.Method.POST);
-        request.setRequestBody(HttpRequestBody.json("{}","utf-8"));
-
+        StringBuffer urlStr=new StringBuffer(URL);
+        urlStr.append(System.currentTimeMillis()).append("&page=0");
+        initUrl=urlStr.toString();
+        Request request = new Request(initUrl);
+        request.addHeader(HEADER_USER_AGENT_KEY, USER_AGENT_IPHONE_OS);
         BaseSpider spider = new BaseSpider(this);
         spider.addRequest(request);
         return spider;
@@ -64,15 +73,16 @@ public class ITHomeNewsCrawler extends BaseCrawler {
 
     @Override
     public synchronized void process(Page page) {
-
-        if (URL.contains(page.getUrl().toString())) {
+        LOGGER.error("响应接口");
+        if (initUrl.contains(page.getUrl().toString())) {
 
             if(!StringUtils.isEmpty(page.getRawText())){
 
+                String cTitle= (String) cacheTitle.get("title");
+                LOGGER.error("返回数据："+page.getRawText());
                 JSONObject jsonObject = JSON.parseObject(page.getRawText());
                 JSONArray dataJSONOArray = (JSONArray) jsonObject.get("Result");
 
-//                for (Object object : dataJSONOArray) {
                 for (int i=0;i<dataJSONOArray.size();i++) {
                     //获取对象
                     JSONObject jsonDataObject = (JSONObject) dataJSONOArray.get(i);
@@ -80,9 +90,8 @@ public class ITHomeNewsCrawler extends BaseCrawler {
                     //标题
                     String title = String.valueOf(jsonDataObject.get("title")).trim();
 
-                    String cTitle= (String) cacheTitle.get("title");
 
-                    //如果是第1行，是此批次的最新时间
+//                    //如果是第1行，是此批次的最新时间
                     if(i==0){
                         cacheTitle.put("title",title);
                     }
@@ -116,6 +125,7 @@ public class ITHomeNewsCrawler extends BaseCrawler {
                     //默认封面图有1张
                     Integer imageCount =1;
                     List<NewsImageDO> newsImageDOList = new ArrayList<>();
+
                     if(!CollectionUtils.isEmpty(jsonArray)){
                         imageCount=jsonArray.size();
                         boolean checkImg=true;
@@ -123,21 +133,25 @@ public class ITHomeNewsCrawler extends BaseCrawler {
                             if(null!=imageObject){
                                 String imageUrl=imageObject.toString().substring(0,imageObject.toString().indexOf("@"));
                                 //添加校验问题
-                                if(StringUtils.isEmpty(imageUrl) && !imageUrl.startsWith("http:") && !imageUrl.startsWith("https:")){
+                                if(StringUtils.isEmpty(imageUrl) || !imageUrl.startsWith("http:")){
                                     checkImg=false;
                                 }
-                                String imageSWH=imageObject.toString().substring(imageObject.toString().indexOf("@")+1,imageObject.toString().length());
-                                String[] swh=imageSWH.split(",");
-                                if(swh.length>0){
-                                    String widthStr=swh[1];
-                                    String highStr=swh[2];
-                                    Integer width=Integer.parseInt(widthStr.substring(widthStr.indexOf("_")+1,widthStr.length()));
-                                    Integer high=Integer.parseInt(highStr.substring(highStr.indexOf("_")+1,highStr.length()));
-                                    newsImageDOList.add(newsImageCoreManager.buildNewsImageDO(
-                                            IDUtil.getNewID(), newsId,
-                                            imageUrl, width, high,
-                                            NewsImageDO.IMAGE_TYPE_MINI));
+                                try{
+                                    String imageSWH=imageObject.toString().substring(imageObject.toString().indexOf("@")+1,imageObject.toString().length());
+                                    String[] swh=imageSWH.split(",");
+                                    if(swh.length>0){
+                                        String widthStr=swh[1];
+                                        String highStr=swh[2];
+                                         width=Integer.parseInt(widthStr.substring(widthStr.indexOf("_")+1,widthStr.length()));
+                                         high=Integer.parseInt(highStr.substring(highStr.indexOf("_")+1,highStr.length()));
+                                    }
+                                }catch (Exception ex){
+                                    ex.printStackTrace();
                                 }
+                                newsImageDOList.add(newsImageCoreManager.buildNewsImageDO(
+                                        IDUtil.getNewID(), newsId,
+                                        imageUrl, width, high,
+                                        NewsImageDO.IMAGE_TYPE_MINI));
                             }
                         }
                         //如果图片有问题则丢弃当前新闻
@@ -145,9 +159,7 @@ public class ITHomeNewsCrawler extends BaseCrawler {
                             continue;
                         }
                     }else{
-                        //IT之家默认图片宽高
-                        Integer width=240;
-                        Integer high=180;
+
                         String imageUrl= String.valueOf(jsonDataObject.get("image"));
                         //如果还是没封面图 丢弃当前
                         if(StringUtils.isEmpty(imageUrl)){
@@ -204,39 +216,39 @@ public class ITHomeNewsCrawler extends BaseCrawler {
             }
         }else{
             String url= String.valueOf(page.getUrl());
+            LOGGER.error("开始抓取url："+url);
 //            String newsKey=url.substring(url.lastIndexOf("/")+1,url.lastIndexOf("."));
             Html html = page.getHtml();
             List<Selectable> nodes = html.xpath("//div[@class='con-box']").nodes();
-
-            for (Selectable node : nodes) {
-                //生成dataKey
-                String dataKey=url;
-                dataKey=EncryptUtil.encrypt(dataKey, "md5");
-                //获取内容
-                Selectable contentNode = node.xpath("//div[@class='news-content']");
-                List<Selectable> aNodes = contentNode.xpath("//a").nodes();
-                for (Selectable aNode : aNodes) {
-                    if (aNode.toString().contains("href")) {
-                        Element elements = HtmlNodeUtil.getElements((HtmlNode) aNode).get(0);
-                        elements.remove();
-                        continue;
-                    }
-                }
-
-                String content = contentNode.toString();
-                if (StringUtils.isEmpty(content)
-                        || StringUtils.isEmpty(dataKey)
-                        || !cacheNewsDO.containsKey(dataKey)) {
-                    return;
-                }
-
-                // 获取来源
-                String source = node.xpath("//span[@class='news-author']/tidyText()").toString();
-                //将内容的data-original的改为src
-                content = content.replaceAll("data-original","src");
-                // 去保存
-                itHomeNewsCrawlerPipeline.saveITHomeNews(dataKey, cacheNewsDO, cacheNewsImageDO, content,source);
+            if(nodes.size()<0){
+                return;
             }
+            String dataKey=EncryptUtil.encrypt(url, "md5");
+            //获取内容
+            Selectable contentNode = nodes.get(0).xpath("//div[@class='news-content']");
+            List<Selectable> aNodes = contentNode.xpath("//a").nodes();
+            for (Selectable aNode : aNodes) {
+                if (aNode.toString().contains("href")) {
+                    Element elements = HtmlNodeUtil.getElements((HtmlNode) aNode).get(0);
+                    elements.remove();
+                    continue;
+                }
+            }
+
+            String content = contentNode.toString();
+            if (StringUtils.isEmpty(content)
+                    || StringUtils.isEmpty(dataKey)
+                    || !cacheNewsDO.containsKey(dataKey)) {
+                return;
+            }
+
+            // 获取来源
+            String source = nodes.get(0).xpath("//span[@class='news-author']/tidyText()").toString();
+            //将内容的data-original的改为src
+            content = content.replaceAll("data-original","src");
+            LOGGER.error("开始保存："+dataKey);
+            // 去保存
+            itHomeNewsCrawlerPipeline.saveITHomeNews(dataKey, cacheNewsDO, cacheNewsImageDO, content,source);
 
         }
 

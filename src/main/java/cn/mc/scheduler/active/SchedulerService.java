@@ -2,6 +2,7 @@ package cn.mc.scheduler.active;
 
 import cn.mc.core.dataObject.scheduler.SchedulerDO;
 import cn.mc.core.entity.Page;
+import cn.mc.core.exception.SchedulerException;
 import cn.mc.core.exception.SchedulerNewException;
 import cn.mc.core.mybatis.Update;
 import cn.mc.core.utils.BeanManager;
@@ -203,12 +204,7 @@ public class SchedulerService {
             }
         } catch (SchedulerNewException e) {
             schedulerManager.updateRunFailByJobNameAndJobGroup(jobName, runSchedulerPO.getJobGroup());
-            throw new SchedulerNewException(e.getMessage()) {
-                @Override
-                public int getCode() {
-                    return e.getCode();
-                }
-            };
+            throw new SchedulerNewException(e.getMessage());
         } catch (Exception e) {
             schedulerManager.updateRunFailByJobNameAndJobGroup(jobName, runSchedulerPO.getJobGroup());
             throw new RuntimeException(e);

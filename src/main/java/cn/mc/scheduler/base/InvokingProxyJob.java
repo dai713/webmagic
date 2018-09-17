@@ -1,6 +1,7 @@
 package cn.mc.scheduler.base;
 
 import cn.mc.core.dataObject.logs.SchedulerLogsDO;
+import cn.mc.core.exception.SchedulerException;
 import cn.mc.core.exception.SchedulerNewException;
 import cn.mc.core.mybatis.Update;
 import cn.mc.core.utils.BeanManager;
@@ -13,6 +14,8 @@ import org.quartz.JobExecutionContext;
 import java.util.Date;
 
 /**
+ * 任务调用
+ *
  * @auther sin
  * @time 2018/2/2 13:38
  */

@@ -4,6 +4,7 @@ import cn.mc.core.dataObject.NewsContentArticleDO;
 import cn.mc.core.dataObject.NewsDO;
 import cn.mc.core.dataObject.NewsImageDO;
 import cn.mc.core.manager.NewsCoreManager;
+import cn.mc.core.utils.CollectionUtil;
 import cn.mc.core.utils.IDUtil;
 import cn.mc.scheduler.base.BaseSpider;
 import cn.mc.scheduler.crawler.BaseCrawler;
@@ -14,6 +15,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +36,12 @@ import java.util.Map;
  * @author daiqingwen
  * @date 2018/7/24 上午 9:46
  */
-
 @Component
 public class WeiFengCrawlers extends BaseCrawler {
 
-    private static final Logger log = LoggerFactory.getLogger(WeiFengCrawlers.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WeiFengCrawlers.class);
 
-    private Site SITE = Site.me().setRetrySleepTime(3).setSleepTime(100);
+    private Site SITE = Site.me().setRetrySleepTime(3).setSleepTime(300);
 
     private static final String url = "http://www.feng.com/publish/bbsapp.php" +
             "?r=api/dyn&v=2&type=getArticlesByType";
@@ -56,9 +57,8 @@ public class WeiFengCrawlers extends BaseCrawler {
     @Autowired
     private WeiFengPipeline weiFengPipeline;
 
-    private List<NewsDO> list = Lists.newArrayList();
-    private List<NewsContentArticleDO> detailList = Lists.newArrayList();
-    private List<NewsImageDO> imageList = Lists.newArrayList();
+    private Map<String, NewsDO> newsMap = Maps.newHashMap();
+    private Map<String, NewsImageDO> imageMap = Maps.newHashMap();
 
     @Override
     public Spider createCrawler() {
@@ -91,7 +91,6 @@ public class WeiFengCrawlers extends BaseCrawler {
         JSONObject jsonObject = JSON.parseObject(page.getRawText());
         JSONObject data = jsonObject.getJSONObject("data");
         JSONArray array = data.getJSONArray("dataList");
-        JSONArray array1 = new JSONArray();
 
         // 获取第一条新闻
         String firstId = String.valueOf(array.getJSONObject(0).getInteger("jumpNext"));
@@ -112,7 +111,6 @@ public class WeiFengCrawlers extends BaseCrawler {
         for (int i = 0; i < array.size(); i++) {
             JSONObject obj = array.getJSONObject(i);
             Long newId = IDUtil.getNewID();
-            String dataKey = this.encrypt(String.valueOf(IDUtil.getNewID()));
             Date date = new Date();
             String picture = obj.getString("picture");
             String id = String.valueOf(obj.getInteger("jumpNext"));
@@ -120,7 +118,8 @@ public class WeiFengCrawlers extends BaseCrawler {
             Integer srcWidth;
             Integer srcHeight;
             Map map = schedulerUtils.parseImg(picture);
-            if (StringUtils.isEmpty(map)) {
+
+            if (CollectionUtil.isEmpty(map)) {
                 srcHeight = 0;
                 srcWidth = 0;
             } else {
@@ -130,6 +129,8 @@ public class WeiFengCrawlers extends BaseCrawler {
 
             String detailUrl = "https://bbs.feng.com/mobile-news-read-0-";
             String url = detailUrl + id + ".html";
+            String dataKey = this.encrypt(url);
+
             urlList.add(url);
             NewsDO newsDO = newsCoreManager.buildNewsDO(newId, dataKey, title,
                     0, url, "", NewsDO.DATA_SOURCE_WEIFENG, url,
@@ -137,13 +138,17 @@ public class WeiFengCrawlers extends BaseCrawler {
                     "", 0, obj.getString("message"), date,
                     0, 0, date, NewsDO.DISPLAY_TYPE_ONE_MINI_IMAGE,
                     obj.getInteger("replies"), obj.getInteger("replies"));
-            list.add(newsDO);
+//            list.add(newsDO);
+            newsMap.put(dataKey, newsDO);
 
             // 上传图片至阿里云
+            // TODO: 2018/8/7 Sin TO 庆文 不要在抓取中上传图片，资源处理到一个地方，Pipeline 里面
             String saveImg = aliyunOSSClientUtil.uploadPicture(picture);
             NewsImageDO newsImage = new NewsImageDO(IDUtil.getNewID(), newId, srcWidth,
                     srcHeight, NewsImageDO.IMAGE_TYPE_MINI, saveImg, NewsImageDO.STATUS_NORMAL);
-            imageList.add(newsImage);
+//            imageList.add(newsImage);
+            imageMap.put(dataKey, newsImage);
+
         }
 
         page.addTargetRequests(urlList);
@@ -155,26 +160,15 @@ public class WeiFengCrawlers extends BaseCrawler {
      */
     private void getDetails(Page page) {
         String content = page.getHtml().xpath("//article[@class='article']").toString();
+        String originUrl = page.getUrl().toString();
 
         content = schedulerUtils.replaceLabel(content);
 
-        String originUrl = page.getUrl().toString();
-        originUrl = originUrl.substring(originUrl.lastIndexOf("-")+1, originUrl.length() - 5);
-        Long newsId = 0L;
-        for (NewsDO newsDO : list) {
-            String newsUrl = newsDO.getNewsUrl();
-            newsUrl = newsUrl.substring(newsUrl.lastIndexOf("-")+1, newsUrl.length() - 5);
-            if (originUrl.equals(newsUrl)) {
-                newsId = newsDO.getNewsId();
-                break;
-            }
-        }
-        NewsContentArticleDO contentArticleDO = new NewsContentArticleDO(IDUtil.getNewID(), newsId, content, NewsContentArticleDO.ARTICLE_TYPE_HTML);
-        detailList.add(contentArticleDO);
+        String dataKey = this.encrypt(originUrl);
 
-        if (list.size() == detailList.size()) {
-            weiFengPipeline.save(list, detailList, imageList);
-        }
+        NewsContentArticleDO contentArticleDO = new NewsContentArticleDO(IDUtil.getNewID(),
+                null, content, NewsContentArticleDO.ARTICLE_TYPE_HTML);
 
+        weiFengPipeline.save(dataKey, newsMap, imageMap, contentArticleDO);
     }
 }

@@ -209,7 +209,7 @@ public class EntertainmentCrawler extends BaseCrawler {
         // 获取新闻
         NewsDO newsDO = cacheNewsDO.get(dataKey);
 
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
                 newsDO.getDataKey(), new Field("newsId"));
 
         if (dataBaseNewsDO != null) {

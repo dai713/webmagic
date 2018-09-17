@@ -14,6 +14,7 @@ import cn.mc.scheduler.mapper.NewsImageMapper;
 import cn.mc.scheduler.mapper.NewsMapper;
 import cn.mc.scheduler.mq.MQTemplate;
 import cn.mc.scheduler.util.AliyunOSSClientUtil;
+import cn.mc.scheduler.util.CrawlerUtil;
 import cn.mc.scheduler.util.SchedulerUtils;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,34 +50,37 @@ public class SearchNewsCrawlerPipeline {
     private NewsContentPictureMapper newsContentPictureMapper;
 
     private static int size = 0;
-
+    @Autowired
+    private CrawlerUtil crawlerUtil;
     @Transactional
     public synchronized void saveDetailPage(String dataKey,
                                             NewsDO newsDO,
                                             SearchNewsOneVO searchNewsOneVO,
                                             NewsContentArticleDO newsContentArticleDO) {
 
+        // 开始保存
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
+                newsDO.getDataKey(), new Field("newsId"));
+        if (dataBaseNewsDO != null) {
+            return;
+        }
         // 过滤检查数据
         String newsSource = newsDO.getNewsSource();
         String article = newsContentArticleDO.getArticle();
 
         String newContent = SchedulerUtils
-                .contentFilter(article, newsSource,newsDO.getNewsId());
+                .contentFilter(article, newsSource,newsDO.getTitle(),newsDO.getNewsId());
 
         if (StringUtils.isEmpty(newContent)) {
             return;
         }
         newsContentArticleDO.setArticle(newContent);
 
-        // 开始保存
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
-                newsDO.getDataKey(), new Field("newsId"));
-        if (dataBaseNewsDO != null) {
-            return;
-        }
 
         newsDO.setNewsState(NewsDO.STATE_NOT_RELEASE);
         newsMapper.insert(Update.copyWithoutNull(newsDO));
+        //添加新闻缓存时间 用来监控
+        crawlerUtil.addNewsTime(this.getClass().getSimpleName()+newsDO.getNewsType());
 
         // 插入图片
         List<NewsImageDO> newsImageDOList = searchNewsOneVO.getNewsImageDOList();
@@ -93,7 +97,7 @@ public class SearchNewsCrawlerPipeline {
         mqTemplate.sendNewsReviewMessage(MQTemplate.ARTICLE_TAG,
                 ImmutableMap.of("newsId", newsDO.getNewsId()));
 
-//        CommonUtil.debug("\r\n \r\n size --------> " + ++size);
+        CommonUtil.debug("\r\n \r\n size --------> " + ++size);
 
     }
 
@@ -103,7 +107,7 @@ public class SearchNewsCrawlerPipeline {
                                          SearchNewsOneVO searchNewsOneVO,
                                          List<NewsContentPictureDO> newsContentPictureDOList) {
 
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
                 newsDO.getDataKey(), new Field("newsId"));
 
         if (dataBaseNewsDO != null) {
@@ -130,6 +134,6 @@ public class SearchNewsCrawlerPipeline {
         mqTemplate.sendNewsReviewMessage(MQTemplate.PICTURES_TAG,
                 ImmutableMap.of("newsId", newsDO.getNewsId()));
 
-//        CommonUtil.debug("\r\n \r\n size --------> " + ++size);
+        CommonUtil.debug("\r\n \r\n size --------> " + ++size);
     }
 }

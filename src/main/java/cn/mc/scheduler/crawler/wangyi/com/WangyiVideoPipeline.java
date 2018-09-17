@@ -11,13 +11,13 @@ import cn.mc.scheduler.mapper.NewsContentVideoMapper;
 import cn.mc.scheduler.mapper.NewsImageMapper;
 import cn.mc.scheduler.mapper.NewsMapper;
 import cn.mc.scheduler.mq.MQTemplate;
+import cn.mc.scheduler.util.CrawlerUtil;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +43,8 @@ public class WangYiVideoPipeline {
     private MQTemplate mqTemplate;
     @Autowired
     private CrawlerManager crawlerManager;
-
+    @Autowired
+    private CrawlerUtil crawlerUtil;
     /**
      * 保存数据
      *
@@ -51,10 +52,9 @@ public class WangYiVideoPipeline {
      * @param newsImageDOMap
      * @param videoDOMap
      */
-    public void save(Map<Long, NewsDO> newsDOMap,
-                     Map<Long, NewsImageDO> newsImageDOMap,
-                     Map<Long, NewsContentVideoDO> videoDOMap) {
-
+    public void save(Map<String, NewsDO> newsDOMap,
+                     Map<String, NewsImageDO> newsImageDOMap,
+                     Map<String, NewsContentVideoDO> videoDOMap) {
 
         // 统一去数据库检查，是否存在
         List<NewsDO> newsDOList = Lists.newArrayList(newsDOMap.values());
@@ -70,19 +70,20 @@ public class WangYiVideoPipeline {
 
         // 开始单个保存
         for (NewsDO newsDO : newsDOList) {
-            Long newsId = newsDO.getNewsId();
+            String dataKey = newsDO.getDataKey();
 
             // 数据库如果存在直接 continue
-            if (dataKeyNewsDOMap.containsKey(newsId)) {
+            if (dataKeyNewsDOMap.containsKey(dataKey)) {
                 continue;
             }
 
-            if (!newsImageDOMap.containsKey(newsId)
-                    || !videoDOMap.containsKey(newsId))
+            if (!newsImageDOMap.containsKey(dataKey)
+                    || !videoDOMap.containsKey(dataKey)) {
                 continue;
+            }
 
-            NewsImageDO newsImageDO = newsImageDOMap.get(newsId);
-            NewsContentVideoDO videoDO = videoDOMap.get(newsId);
+            NewsImageDO newsImageDO = newsImageDOMap.get(dataKey);
+            NewsContentVideoDO videoDO = videoDOMap.get(dataKey);
 
             // 去 save
             toSave(newsDO, newsImageDO, videoDO);
@@ -106,6 +107,8 @@ public class WangYiVideoPipeline {
                                     @NotNull NewsImageDO newsImageDO,
                                     @NotNull NewsContentVideoDO videoDO) {
         newsMapper.insert(Update.copyWithoutNull(newsDO));
+        //添加新闻缓存时间 用来监控
+        crawlerUtil.addNewsTime(this.getClass().getSimpleName()+newsDO.getNewsType());
         newsImageMapper.insert(Update.copyWithoutNull(newsImageDO));
         videoMapper.insert(Update.copyWithoutNull(videoDO));
     }

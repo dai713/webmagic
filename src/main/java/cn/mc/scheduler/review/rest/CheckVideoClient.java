@@ -1,8 +1,14 @@
 package cn.mc.scheduler.review.rest;
 
 import cn.mc.core.constants.CodeConstants;
+import cn.mc.core.dataObject.ReviewFailDO;
+import cn.mc.core.mybatis.Update;
+import cn.mc.core.result.Result;
 import cn.mc.core.utils.HttpUtil;
 import cn.mc.scheduler.SchedulerProperties;
+import cn.mc.scheduler.mapper.SchedulerLogsMapper;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,28 +37,39 @@ public class CheckVideoClient {
     @Autowired
     private SchedulerProperties schedulerProperties;
 
+    @Autowired
+    private SchedulerLogsMapper schedulerLogsMapper;
+
     private static final String VIDEO_REVIEW_SERVICE_URL = "/grabber/videoReviewSimple";
 
-    public boolean checkVideoUrl(String url) {
-        Boolean checkResult = getCheckVideoData(url);
-        return checkResult;
+    public boolean checkVideoUrl(String url,Long newsId) {
+        Result result  = getCheckVideoData(url);
+        JSONObject jsonObject = JSON.parseObject(result.getResult().toString());
+        Boolean reviewResult=jsonObject.getBoolean("videoReviewResult");
+        Double reviewValue=jsonObject.getDoubleValue("reviewResult");
+        if(reviewResult==false){
+            String  imageUrl=jsonObject.getString("imageUrl");
+            ReviewFailDO reviewFailDO=new ReviewFailDO();
+            reviewFailDO.setNewsId(newsId);
+            reviewFailDO.setImageUrl(imageUrl);
+            reviewFailDO.setReviewValue(reviewValue);
+            reviewFailDO.setVideoUrl(url);
+            schedulerLogsMapper.insertReviewFailLog(Update.copyWithoutNull(reviewFailDO));
+        }
+        return reviewResult;
     }
 
 
-    private Boolean getCheckVideoData(String url) {
+    private Result getCheckVideoData(String url) {
         String authServerUrl = schedulerProperties.videoImageReviewServer;
         String requestUrl = String.format("%s%s", authServerUrl, VIDEO_REVIEW_SERVICE_URL);
         try {
-            ResponseEntity<Boolean> responseEntity = restTemplate.postForEntity(
-                    URI.create(requestUrl), url, Boolean.class);
-            if (CodeConstants.HTTP_SUCCESS_200 != responseEntity.getStatusCode().value()) {
-                return false;
-            }
+            ResponseEntity<Result> responseEntity = restTemplate.postForEntity(
+                    URI.create(requestUrl), url, Result.class);
             return responseEntity.getBody();
         } catch (Exception ex) {
             ex.printStackTrace();
-            return false;
         }
-
+        return null;
     }
 }

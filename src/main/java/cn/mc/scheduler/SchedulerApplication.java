@@ -1,5 +1,6 @@
 package cn.mc.scheduler;
 
+import cn.mc.core.client.FileClientProperties;
 import cn.mc.core.converter.AppHttpMessageConverter;
 import cn.mc.core.mysql.DataSourceContextHolder;
 import cn.mc.core.mysql.DataSourceType;
@@ -9,6 +10,7 @@ import cn.mc.scheduler.base.BrowserSchedulerFactoryBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -37,6 +39,7 @@ public class SchedulerApplication {
 
     public static void main(String[] args) {
         System.setProperty("user.timezone","Asia/Shanghai");
+        System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
         SpringApplication.run(SchedulerApplication.class);
     }
 
@@ -50,12 +53,17 @@ public class SchedulerApplication {
         return new RestTemplate(httpRequestFactory);
     }
 
-
     @Bean
     public BeanManager beanManager(ApplicationContext applicationContext) {
         BeanManager beanManager = new BeanManager();
         beanManager.setApplicationContext(applicationContext);
         return beanManager;
+    }
+
+    @Bean
+    @ConfigurationProperties("scheduler.oss")
+    public FileClientProperties fileClientProperties() {
+        return new FileClientProperties();
     }
 
     @Bean

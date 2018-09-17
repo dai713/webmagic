@@ -138,7 +138,7 @@ public class BaiDuSportsVideoCrawler extends BaseCrawler {
 
             // 新闻 id 和 dataKey
             long newsId = IDUtil.getNewID();
-            String dataKey = CrawlerUtil.getDataKey(newsSourceUrl);
+            String dataKey = encrypt(newsSourceUrl);
 
             // 处理 newsImage
             String imgUrl = itemJSONObject.getString("img");

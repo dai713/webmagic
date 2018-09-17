@@ -59,6 +59,16 @@ datasource:
       url: jdbc:mysql://rm-bp1s1k9dmuwu5jr0y.mysql.rds.aliyuncs.com:3306/admin_4eb4?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
       username: admin_4a2c
       password: EB0686bee4f1
+    paper:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/paper2?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+    comment:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/comment?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
 
 # mybatis
 mybatis:
@@ -98,6 +108,8 @@ text-filter:
 # 图片审核服务
 sys:
   video-image-review-server: http://127.0.0.1:8084
+  server:
+      url: https://b-i.mc.cn
   mq:
     news-review:
       access-key-id: LTAIGXjgALazgOde
@@ -106,6 +118,9 @@ sys:
       topic: BR_NEWS_REVIEW
       producer-id: PID_BR_NEWS_REVIEW
       consumer-id: CID_BR_NEWS_REVIEW
+  systemKeywords:
+    replace-keywords: replaceKeywords
+    matched-keywords: matcherKeywords
 
 # logging
 logging:

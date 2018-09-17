@@ -27,7 +27,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
+/**
+ * 网易军事新闻
+ *
+ * @author xl
+ * @date 2018/7/23 下午 15:46
+ */
 @Component
 public class WangYiMilitaryCrawler extends BaseCrawler {
 

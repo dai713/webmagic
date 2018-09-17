@@ -22,4 +22,7 @@ public interface SchedulerLogsMapper {
             @Param("update") Update update
     );
 
+    int insertReviewFailLog(
+            @Param("update") Update update
+    );
 }

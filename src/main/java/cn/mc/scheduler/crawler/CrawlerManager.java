@@ -31,7 +31,7 @@ public class CrawlerManager {
      * @param field
      * @return
      */
-    public NewsDO listNewsDOByDataKey(String dataKey, Field field) {
+    public NewsDO getNewsDOByDataKey(String dataKey, Field field) {
         Date date = DateUtil.addDate(Calendar.DAY_OF_MONTH, TOP_DAT);
         return newsMapper.selectByDataKeyGtAddTime(dataKey, date, field);
     }
@@ -46,12 +46,5 @@ public class CrawlerManager {
     public List<NewsDO> listNewsDOByDataKeys(Collection<String> dataKeys, Field field) {
         Date date = DateUtil.addDate(Calendar.DAY_OF_MONTH, TOP_DAT);
         return newsMapper.selectByDataKeysGtAddTime(dataKeys, date, field);
-    }
-
-    public static void main(String[] args) {
-
-        Date date = DateUtil.addDate(Calendar.DAY_OF_MONTH, TOP_DAT);
-
-        System.out.println(DateUtil.format(date, "yyyy-MM-dd"));
     }
 }

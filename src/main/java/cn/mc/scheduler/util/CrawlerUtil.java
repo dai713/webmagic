@@ -1,10 +1,15 @@
 package cn.mc.scheduler.util;
 
-import cn.mc.core.utils.EncryptUtil;
+import cn.mc.scheduler.script.news.CheckNewsJobDataScript;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * 爬虫工具类
@@ -12,17 +17,13 @@ import java.net.URL;
  * @author sin
  * @time 2018/7/23 20:16
  */
+@Component
 public class CrawlerUtil {
 
-    /**
-     * 爬虫 - 获取 dataKey
-     *
-     * @param inputValue
-     * @return
-     */
-    public static String getDataKey(String inputValue) {
-        return EncryptUtil.encrypt(inputValue, "md5");
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(CrawlerUtil.class);
+
+    @Autowired
+    public RedisUtil redisUtil;
 
     /**
      * 获取视频 size
@@ -47,5 +48,19 @@ public class CrawlerUtil {
                 connection.disconnect();
             }
         }
+    }
+
+    /**
+     * 设置每个缓存对象，用来监控数据抓取
+     *
+     * @param key value
+     * @return
+     */
+    public void addNewsTime(String key) {
+        String redisKey = CheckNewsJobDataScript.redisKey;
+        Map<String, String> map = redisUtil.hmget(redisKey);
+        Long time = System.currentTimeMillis();
+        map.put(key, time.toString());
+        redisUtil.hmset(redisKey, map);
     }
 }

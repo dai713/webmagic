@@ -17,25 +17,11 @@ public class keywordTest {
 
     @Test
     public void replace() {
-
+//        String content = "轻松一刻：班长总是打我，我让胶水涂在他位子上，当天";
+//        Integer type = 0;
+//        Long newsId = 32423413234234234L;
+//        boolean flag = schedulerUtils.keywordsMatch(content, type, newsId);
+//        System.out.println(flag);
     }
 
-    public static void main(String[] args) {
-//        String ss = "dsfasf\nlkjlkjkljk\r666666666666\neroiuewroewquri\r00000";
-
-//        String rgx = "[\r\n]";
-//        String[] arr = ss.split(rgx);
-//        for (int i = 0; i < arr.length; i++) {
-//            System.out.println(arr[i]);
-//        }
-//        String text = "auser1 home1b\r" +
-//                "auser2 home2b\n" +
-//                "auser3 home3b";
-//        Matcher m = Pattern.compile(rgx).matcher(ss);
-//        while (m.find()) {
-//            System.out.println(m.group());
-//        }
-
-
-    }
 }

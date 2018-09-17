@@ -77,9 +77,14 @@ public class PedailyNewsCrawler extends BaseCrawler {
                     String dataKey= EncryptUtil.encrypt(newsSourceUrl, "md5");
                     //获取来源  来源暂时没有 在详情中抓取
                     String source="";
+                    String keywords;
                     //获取关键字
-                    String keywords=contentNode.xpath("//span/text()").nodes().get(0).toString();
-
+                    List<Selectable> keywordsList=contentNode.xpath("//span/text()").nodes();
+                    if(keywordsList.size()>0){
+                        keywords=keywordsList.get(0).toString();
+                    }else {
+                        keywords=title;
+                    }
                     //新闻Id
                     Long newsId = IDUtil.getNewID();
                     String newsUrl = "";

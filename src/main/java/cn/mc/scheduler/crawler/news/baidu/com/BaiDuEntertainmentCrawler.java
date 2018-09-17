@@ -9,9 +9,7 @@ import cn.mc.core.utils.DateUtil;
 import cn.mc.core.utils.IDUtil;
 import cn.mc.scheduler.base.BaseSpider;
 import cn.mc.scheduler.crawler.BaseCrawler;
-import cn.mc.scheduler.crawler.toutiao.com.EntertainmentCrawler2Pipeline;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import org.assertj.core.util.Lists;
@@ -24,7 +22,6 @@ import org.springframework.util.StringUtils;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
-import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.selector.Html;
 import us.codecraft.webmagic.selector.Selectable;
 

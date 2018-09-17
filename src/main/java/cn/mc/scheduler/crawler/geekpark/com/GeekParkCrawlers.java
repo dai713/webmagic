@@ -14,6 +14,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,9 +57,8 @@ public class GeekParkCrawlers extends BaseCrawler {
     @Autowired
     private GeekParkPipeline geekParkPipeline;
 
-    private List<NewsDO> list = Lists.newArrayList();
-    private List<NewsContentArticleDO> detailList = Lists.newArrayList();
-    private List<NewsImageDO> imageList = Lists.newArrayList();
+    private Map<String, NewsDO> newsMap = Maps.newHashMap();
+    private Map<String, NewsImageDO> imageMap = Maps.newHashMap();
 
     @Override
     public Spider createCrawler() {
@@ -115,7 +115,6 @@ public class GeekParkCrawlers extends BaseCrawler {
                 String id = String.valueOf(obj.getInteger("id"));
                 String imgUrl = obj.getString("cover_url");
                 Long newId = IDUtil.getNewID();
-                String dataKey = this.encrypt(String.valueOf(IDUtil.getNewID()));
                 JSONArray img = obj.getJSONArray("img_list");
                 Date date = new Date();
                 String detailsUrl = "http://main_test.geekpark.net/api/v1/posts/";
@@ -131,21 +130,24 @@ public class GeekParkCrawlers extends BaseCrawler {
                 }
                 // 拼接详情地址
                 detailsUrl = detailsUrl + id;
-
+                String dataKey = "";
                 if (!StringUtils.isEmpty(id)) {
                     urlList.add(detailsUrl);
+                    dataKey = this.encrypt(detailsUrl);
                 }
+
                 NewsDO newsDO = newsCoreManager.buildNewsDO(newId, dataKey, obj.getString("title"), 0, detailsUrl, "", NewsDO.DATA_SOURCE_GEEKPARK, detailsUrl,
                         NewsDO.NEWS_TYPE_TECHNOLOGY, NewsDO.CONTENT_TYPE_IMAGE_TEXT, "", 0, obj.getString("abstract"), date,
                         0, img.size(), date, NewsDO.DISPLAY_TYPE_ONE_MINI_IMAGE, obj.getInteger("comments_count"), obj.getInteger("comments_count"));
-                list.add(newsDO);
+//                list.add(newsDO);
+                newsMap.put(dataKey, newsDO);
 
                 // 上传图片至阿里云
                 String saveImg = aliyunOSSClientUtil.uploadPicture(imgUrl);
 
                 NewsImageDO newsImage = new NewsImageDO(IDUtil.getNewID(), newId, srcWidth, srcHeight, NewsImageDO.IMAGE_TYPE_MINI, saveImg, NewsImageDO.STATUS_NORMAL);
-                imageList.add(newsImage);
-
+//                imageList.add(newsImage);
+                imageMap.put(dataKey, newsImage);
             }
 
             page.addTargetRequests(urlList);
@@ -162,24 +164,15 @@ public class GeekParkCrawlers extends BaseCrawler {
     private void getDetails(Page page) {
         JSONObject jsonObject = JSON.parseObject(page.getRawText());
         JSONObject data = jsonObject.getJSONObject("post");
-        String id;
-        String detailsId = String.valueOf(data.getInteger("id"));
-        Long newsId = 0L;
-        for (NewsDO news : list) {
-            String newsUrl = news.getNewsUrl();
-            id = newsUrl.substring(newsUrl.lastIndexOf("/")+1, newsUrl.length());
-            if (detailsId.equals(id)) {
-                newsId = news.getNewsId();
-                break;
-            }
-        }
         String content = schedulerUtils.replaceLabel(data.getString("content"));
-        NewsContentArticleDO contentArticleDO = new NewsContentArticleDO(IDUtil.getNewID(), newsId, content, NewsContentArticleDO.ARTICLE_TYPE_HTML);
-        detailList.add(contentArticleDO);
+        String origin = page.getUrl().toString();
+        String dataKey = this.encrypt(origin);
 
-        if (list.size() == detailList.size()) {
-            geekParkPipeline.save(list, detailList, imageList);
-        }
+        NewsContentArticleDO contentArticleDO = new NewsContentArticleDO(IDUtil.getNewID(), null, content, NewsContentArticleDO.ARTICLE_TYPE_HTML);
+
+        // 保存
+        geekParkPipeline.save(dataKey, newsMap, imageMap, contentArticleDO);
+
     }
 
 

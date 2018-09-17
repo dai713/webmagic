@@ -40,13 +40,13 @@ spring:
 datasource:
   druid:
     app:
-    driver-class-name: com.mysql.cj.jdbc.Driver
  #    url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/app?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
  #     username: 'app_83e50af'
 #      password: '5d0182f544aa814'
+      driver-class-name: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/app?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
-      username: 'app_83e50af'
-      password: '5d0182f544aa814'
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
     scheduler:
       driver-class-name: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/scheduler?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
@@ -62,7 +62,16 @@ datasource:
       url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/admin?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
       username: 'i4_root'
       password: 'i4@and92bdha1BimcP0dj'
-
+    paper:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/paper2?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
+    comment:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://rm-wz9u28ht7i2f66w6mpo.mysql.rds.aliyuncs.com:3306/comment?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+      username: 'i4_root'
+      password: 'i4@and92bdha1BimcP0dj'
 # mybatis
 mybatis:
   mapper-locations: classpath*:mybatis/*_mapper.xml
@@ -101,6 +110,8 @@ text-filter:
 # 图片审核服务
 sys:
   video-image-review-server: http://127.0.0.1:8084
+  server:
+      url: http://39.108.174.140:7002
   mq:
     news-review:
       access-key-id: LTAIGXjgALazgOde
@@ -109,13 +120,16 @@ sys:
       topic: BR_NEWS_REVIEW_TEST
       producer-id: PID_BR_NEWS_REVIEW_TEST
       consumer-id: CID_BR_NEWS_REVIEW_TEST
+  systemKeywords:
+    replace-keywords: replaceKeywords
+    matched-keywords: matcherKeywords
 
 # logging
 logging:
   file: logs/scheduler.log
   config: classpath:logback-spring.xml
   level:
-    ROOT: ERROR
+    ROOT: INFO
     cn.mc: INFO
     org.springframework: INFO
     cn.mc.scheduler.mapper: INFO

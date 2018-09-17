@@ -91,39 +91,23 @@ public class QQMilitaryNewsCrawler extends BaseCrawler {
                 Long newsId = IDUtil.getNewID();
                 List<NewsImageDO> newsImageDOList = new ArrayList<>();
                 //封面图
-                JSONObject irsImageJSONObject = jsonDataObject.getJSONObject("irs_imgs");
-
-                JSONArray imagesJSONArray = null;
-                String imageSize = null;
-                if (irsImageJSONObject.containsKey("328X231")) {
-                    imageSize = "328X231";
-                    imagesJSONArray = irsImageJSONObject.getJSONArray("328X231");
-                } else if (irsImageJSONObject.containsKey("276X194")) {
-                    imageSize = "276X194";
-                    imagesJSONArray = irsImageJSONObject.getJSONArray("227X148");
-                } else if (irsImageJSONObject.containsKey("966X604")) {
-                    imageSize = "966X604";
-                    imagesJSONArray = irsImageJSONObject.getJSONArray("227X148");
+                JSONArray jsonArray = (JSONArray) jsonDataObject.get("multi_imgs");
+                if (!CollectionUtils.isEmpty(jsonArray)) {
+                    for (Object imageObject : jsonArray) {
+                        String imageUrl = imageObject.toString();
+                        if (StringUtils.isEmpty(imageUrl)) {
+                            continue;
+                        }
+                        int width = 0;
+                        int height = 0;
+                        newsImageDOList.add(newsImageCoreManager.buildNewsImageDO(
+                                IDUtil.getNewID(), newsId,
+                                imageUrl, width, height,
+                                NewsImageDO.IMAGE_TYPE_MINI));
+                    }
+                } else {
+                    continue;
                 }
-
-                // 这条新闻不要了
-                if (CollectionUtils.isEmpty(imagesJSONArray)) {
-                    return;
-                }
-
-                for (Object imageObject : imagesJSONArray) {
-                    String[] imageSizeArray = imageSize.split("X");
-                    int imageWidth = Integer.valueOf(imageSizeArray[0]);
-                    int imageHeight = Integer.valueOf(imageSizeArray[1]);
-                    String imageUrl = String.valueOf(imageObject);
-
-                    newsImageDOList.add(
-                            newsImageCoreManager.buildNewsImageDO(
-                                    IDUtil.getNewID(), newsId,
-                                    imageUrl, imageWidth, imageHeight,
-                                    NewsImageDO.IMAGE_TYPE_MINI));
-                }
-
                 //如果没有图片则丢弃
                 if (newsImageDOList.size() <= 0) {
                     continue;

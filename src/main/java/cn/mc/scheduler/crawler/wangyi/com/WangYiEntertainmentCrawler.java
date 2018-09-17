@@ -141,7 +141,7 @@ public class WangYiEntertainmentCrawler extends BaseCrawler {
                 Object time = jsonDataObject.get("ptime");
                 if (!StringUtils.isEmpty(time)) {
                     displayTime = DateUtil.parse(
-                            String.valueOf(true), "yyyy-MM-dd HH:mm:ss");
+                            String.valueOf(time), "yyyy-MM-dd HH:mm:ss");
                 }
                 String newsUrl = "";
                 String shareUrl = "";

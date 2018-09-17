@@ -30,6 +30,24 @@
         WHERE news_id = #{newsId}
     </select>
 
+    <!--
+
+        根据 newsIds 查询新闻
+
+    -->
+    <select id="selectByNewsIds" resultType="cn.mc.core.dataObject.NewsContentVideoDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news_content_video
+        WHERE news_id
+        IN
+        <foreach collection="newsIds" item="newsId" open="(" close=")" separator=",">
+            #{newsId}
+        </foreach>
+    </select>
+
     <!-- 新增视频 -->
     <insert id="insertVideo" parameterType="java.util.List">
         insert into news_content_video

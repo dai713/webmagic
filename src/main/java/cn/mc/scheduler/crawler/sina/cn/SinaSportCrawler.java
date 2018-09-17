@@ -43,8 +43,6 @@ public class SinaSportCrawler extends BaseCrawler {
 
     private Map<String, List<NewsImageDO>> cacheNewsImageDO = Maps.newHashMap();
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
     @Autowired
     private NewsImageCoreManager newsImageCoreManager;
     @Autowired
@@ -58,13 +56,16 @@ public class SinaSportCrawler extends BaseCrawler {
 
     private Long timeMillis;
 
+    private  String initUrl;
+
     @Override
     public Spider createCrawler() {
         StringBuffer urlStr = new StringBuffer(URL);
         timeMillis = System.currentTimeMillis() / 1000;
         urlStr.append(timeMillis).append("&callback=Zepto").append(timeMillis);
-        URL = urlStr.toString();
-        Request request = new Request(URL);
+        initUrl=urlStr.toString();
+        Request request = new Request(initUrl);
+
         request.addHeader(HEADER_USER_AGENT_KEY, USER_AGENT_IPHONE_OS);
         request.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
         request.addHeader("Accept-Encoding", "gzip, deflate, br");
@@ -80,7 +81,7 @@ public class SinaSportCrawler extends BaseCrawler {
 
     @Override
     public synchronized void process(Page page) {
-        if (URL.contains(page.getUrl().toString())) {
+        if (initUrl.contains(page.getUrl().toString())) {
             String jsonReturn = page.getRawText();
             if (!StringUtils.isEmpty(jsonReturn)) {
                 String jsonStr = jsonReturn.replaceAll("Zepto" + timeMillis, "");
@@ -195,8 +196,8 @@ public class SinaSportCrawler extends BaseCrawler {
                     Object time1 = jsonDataObject.get("ctime");
                     if (!StringUtils.isEmpty(time)) {
                         try {
-                            displayTime = sdf.parse(sdf.format(new Date(Long.parseLong(time.toString()) * 1000)));
-                        } catch (ParseException e) {
+                            displayTime=new Date(Long.parseLong(time.toString())*1000);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     } else {
@@ -204,8 +205,8 @@ public class SinaSportCrawler extends BaseCrawler {
                     }
                     if (!StringUtils.isEmpty(time1)) {
                         try {
-                            createTime = sdf.parse(sdf.format(new Date(Long.parseLong(time1.toString()) * 1000)));
-                        } catch (ParseException e) {
+                        createTime=new Date(Long.parseLong(time1.toString())*1000);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     } else {

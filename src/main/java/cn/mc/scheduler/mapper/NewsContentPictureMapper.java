@@ -33,4 +33,11 @@ public interface NewsContentPictureMapper {
      * @return List<NewsContentPictureDO>
      */
     List<NewsContentPictureDO> listPicture(@Param("newsId") Long newsId,@Param("fields") Field field);
+
+    /**
+     * 新增大图新闻
+     * @param pictureList
+     * @return int
+     */
+    void insertPictureList(List<NewsContentPictureDO> pictureList);
 }

@@ -11,6 +11,7 @@ import cn.mc.scheduler.mapper.NewsImageMapper;
 import cn.mc.scheduler.mapper.NewsMapper;
 import cn.mc.scheduler.mq.MQTemplate;
 import cn.mc.scheduler.util.AliyunOSSClientUtil;
+import cn.mc.scheduler.util.CrawlerUtil;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,8 @@ public class BaiDuSportsVideoPipeline {
     private NewsImageMapper newsImageMapper;
     @Autowired
     private NewsContentVideoMapper newsContentVideoMapper;
-
+    @Autowired
+    private CrawlerUtil crawlerUtil;
     @Transactional
     public synchronized void save(String dataKey,
                                   Map<String, NewsDO> cacheNewsDO,
@@ -57,7 +59,7 @@ public class BaiDuSportsVideoPipeline {
         NewsDO newsDO = cacheNewsDO.get(dataKey);
 
         // 检查重复新闻
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
                 newsDO.getDataKey(), new Field("newsId"));
 
         if (dataBaseNewsDO != null) {
@@ -83,6 +85,8 @@ public class BaiDuSportsVideoPipeline {
         // 保存新闻
         newsDO.setNewsState(NewsDO.STATE_NOT_RELEASE);
         newsMapper.insert(Update.copyWithoutNull(newsDO));
+        //添加新闻缓存时间 用来监控
+        crawlerUtil.addNewsTime(this.getClass().getSimpleName()+newsDO.getNewsType());
 
         // 保存视频
         newsContentVideoMapper.insert(Update.copyWithoutNull(newsContentVideoDO));

@@ -257,7 +257,7 @@ public class RecommendCrawler extends BaseCrawler {
                       List<NewsImageDO> newsImageDOList) {
 
         // 去重
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
                 newsDO.getDataKey(), new Field("newsId"));
 
         if (dataBaseNewsDO != null) {

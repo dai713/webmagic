@@ -59,9 +59,9 @@ public class ReviewCrawlerTest {
 
     @Test
     public void searchNewsCrawlerTest1() {
-        for (int i = 0; i < 100; i++) {
-            searchNewsCrawler.createCrawler().thread(1).run();
-        }
+        searchNewsCrawler.createCrawler().thread(1).run();
+//        for (int i = 0; i < 100; i++) {
+//        }
     }
 
 

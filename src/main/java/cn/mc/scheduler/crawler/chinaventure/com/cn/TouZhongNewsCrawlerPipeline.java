@@ -13,6 +13,7 @@ import cn.mc.scheduler.mapper.NewsImageMapper;
 import cn.mc.scheduler.mapper.NewsMapper;
 import cn.mc.scheduler.mq.MQTemplate;
 import cn.mc.scheduler.util.AliyunOSSClientUtil;
+import cn.mc.scheduler.util.CrawlerUtil;
 import cn.mc.scheduler.util.SchedulerUtils;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,12 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 投中网新闻
+ *
+ * @author xl
+ * @date 2018/7/23 下午 15:46
+ */
 @Service
 public class TouZhongNewsCrawlerPipeline {
 
@@ -40,21 +47,23 @@ public class TouZhongNewsCrawlerPipeline {
     private MQTemplate mqTemplate;
     @Autowired
     private CrawlerManager crawlerManager;
+    @Autowired
+    private CrawlerUtil crawlerUtil;
 
     @Transactional
-    public synchronized void saveLeiPhoneTechnologyNews(String dataKey,
+    public synchronized void saveTouZhongTechnologyNews(String dataKey,
                                             NewsDO newsDO,
                                             Map<String, List<NewsImageDO>> cacheNewsImageDO,
                                             String articleContent) {
 
         // 过滤内容
-        articleContent = SchedulerUtils.contentFilter(articleContent, newsDO.getNewsSource(),newsDO.getNewsId());
+        articleContent = SchedulerUtils.contentFilter(articleContent, newsDO.getNewsSource(),newsDO.getTitle(),newsDO.getNewsId());
 
         if (StringUtils.isEmpty(articleContent))
             return;
 
         // 检查数据库是否存在 新闻
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
                 newsDO.getDataKey(), new Field("newsId"));
 
         if (dataBaseNewsDO != null) {
@@ -73,7 +82,8 @@ public class TouZhongNewsCrawlerPipeline {
 
         newsDO.setNewsState(NewsDO.STATE_NOT_RELEASE);
         newsMapper.insert(Update.copyWithoutNull(newsDO));
-
+        //添加新闻缓存时间 用来监控
+        crawlerUtil.addNewsTime(this.getClass().getSimpleName()+newsDO.getNewsType());
         // 新闻 image
         for (NewsImageDO newsImageDO : newsImageDOList) {
             //上传阿里云替换成我们图片地址

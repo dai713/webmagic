@@ -1,6 +1,7 @@
 package cn.mc.scheduler.base;
 
 import cn.mc.core.mail.MailUtil;
+import cn.mc.core.utils.BeanManager;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.collections.CollectionUtils;
@@ -8,7 +9,6 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import us.codecraft.webmagic.*;
 import us.codecraft.webmagic.downloader.Downloader;
@@ -35,6 +35,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * 爬虫 BaseSpider
+ *
+ *  重写 BaseSpider 优化异常捕获，和邮件提醒优化
+ *
  * @author sin
  * @time 2018/6/22 17:18
  */
@@ -92,9 +96,6 @@ public class BaseSpider extends Spider {
     private Date startTime;
 
     private int emptySleepTime = 30000;
-
-    @Autowired
-    private Environment environment;
 
     /**
      * create a spider with pageProcessor.
@@ -266,7 +267,7 @@ public class BaseSpider extends Spider {
 
     protected void initComponent() {
         if (downloader == null) {
-            this.downloader = new HttpClientDownloader();
+            this.downloader = new BaseHttpClientDownloader();
         }
         if (pipelines.isEmpty()) {
             pipelines.add(new ConsolePipeline());
@@ -313,11 +314,8 @@ public class BaseSpider extends Spider {
                             onError(request);
                             logger.error("process request " + request + " error", e);
 
-                            String active = environment.getProperty("spring.profiles.active");
-                            if (!active.equals("dev")) {
-                                // 发送错误邮件
-                                sendErrorMail(e);
-                            }
+                            // 发送错误邮件
+                            sendErrorMail(e);
                         } finally {
                             pageCount.incrementAndGet();
                             signalNewUrl();
@@ -772,7 +770,8 @@ public class BaseSpider extends Spider {
             return;
         }
 
-        MailUtil.sendSystemError("爬虫异常了！",
-                JSON.toJSONString(exceptionMessage));
+        String subject = "爬虫异常了！";
+        Environment environment = BeanManager.getBean(Environment.class);
+        MailUtil.sendSystemError(subject, JSON.toJSONString(exceptionMessage), environment);
     }
 }

@@ -1,5 +1,7 @@
 package cn.mc.scheduler.base;
 
+import cn.mc.core.client.FileClient;
+import cn.mc.core.client.FileClientProperties;
 import cn.mc.core.dataObject.work.FilterWordDO;
 import cn.mc.core.mail.MailUtil;
 import cn.mc.core.mybatis.Field;
@@ -7,11 +9,14 @@ import cn.mc.core.utils.*;
 import cn.mc.scheduler.SchedulerProperties;
 import cn.mc.scheduler.mapper.FilterWordMapper;
 import cn.mc.scheduler.review.ArticleReviewSubscribe;
+import cn.mc.scheduler.service.SystemKeywordsService;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -21,6 +26,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * 定时任务 init
+ *
  * @auther sin
  * @time 2018/2/23 11:20
  */
@@ -33,17 +40,34 @@ public class SchedulerInit implements ApplicationRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerInit.class);
 
+    @Autowired
+    private Environment environment;
+
+    @Autowired
+    private SystemKeywordsService systemKeywordsService;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
 
         // 初始化 FilterWord
-//        initFilterWord();
-//
-//        // 审核服务 测试连接
+        initFilterWord();
+
+        // 初始化 FileCenter
+        FileClient.init(BeanManager.getBean(FileClientProperties.class));
+
+        // 审核服务 测试连接
 //        reviewServiceTestConnection();
-//
-//        // 新闻审核 - 文章审核订阅
-//        BeanManager.getBean(ArticleReviewSubscribe.class).subscribe();
+
+        // 新闻审核 - 文章审核订阅
+        BeanManager.getBean(ArticleReviewSubscribe.class).subscribe();
+
+        // SnowflakeIDGenerate init test
+        Long nextId = new SnowflakeIDGenerate().nextId();
+        LOGGER.info("SnowflakeIDGenerate nextId test. nextId {} ", nextId);
+
+        LOGGER.info("初始化 keywords 缓存 begin");
+        systemKeywordsService.refreshCache();
+        LOGGER.info("初始化 keywords 缓存 end");
     }
 
     private void initFilterWord() {
@@ -94,7 +118,8 @@ public class SchedulerInit implements ApplicationRunner {
                 if (!heartbeat) {
                     LOGGER.error("审核服务挂了!");
                     MailUtil.sendSystemError(REVIEW_SERVICE_HEARTBEAT_SUBJECT,
-                            REVIEW_SERVICE_HEARTBEAT_ERROR_MESSAGE);
+                            REVIEW_SERVICE_HEARTBEAT_ERROR_MESSAGE,
+                            BeanManager.getBean(Environment.class));
                 }
             }
         }).start();

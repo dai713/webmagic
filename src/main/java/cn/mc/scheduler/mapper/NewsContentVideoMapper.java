@@ -9,6 +9,7 @@ import cn.mc.core.mysql.DataSourceType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -23,11 +24,27 @@ public interface NewsContentVideoMapper {
             @Param("update") Update update
     );
 
-    List<NewsContentVideoDO> selectContentVideoById(@Param("newsId") Long newsId,@Param("fields") Field field);
+    List<NewsContentVideoDO> selectContentVideoById(
+            @Param("newsId") Long newsId,
+            @Param("fields") Field field
+    );
 
     /**
      * 新增视频
+     *
      * @param list
      */
     void insertVideo(List<NewsContentVideoDO> list);
+
+    /**
+     * 新闻 ids
+     *
+     * @param newsIds
+     * @param field
+     * @return
+     */
+    List<NewsContentVideoDO> selectByNewsIds(
+            @Param("newsIds") Collection<Long> newsIds,
+            @Param("fields") Field field
+    );
 }

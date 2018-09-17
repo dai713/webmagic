@@ -1,5 +1,6 @@
 package cn.mc.scheduler.mq;
 
+import cn.mc.core.utils.DateUtil;
 import cn.mc.core.utils.IDUtil;
 import cn.mc.scheduler.MQProperties;
 import com.alibaba.fastjson.JSON;
@@ -38,7 +39,6 @@ public class MQTemplate {
     @Qualifier("newsReviewMQProperties")
     private MQProperties mqProperties;
 
-
     public static final String ARTICLE_TAG = "ArticleTag";
     public static final String VIDEO_TAG = "VideoTag";
     public static final String PICTURES_TAG = "PicturesTag";
@@ -56,14 +56,16 @@ public class MQTemplate {
 
         SendResult sendResult = newsReviewProducer.send(msg);
 
-        System.out.println(new Date()
-                + " Send mq message success. Topic is:" + msg.getTopic()
-                + " msgId is: " + sendResult.getMessageId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("{} Send mq message success. Topic is: {} msgId is: {}",
+                    DateUtil.format(new Date(), "yyyy-MM-dd HH:mm"),
+                    msg.getTopic(), sendResult.getMessageId());
+        }
     }
 
     public void subArticleMessage(MessageListener messageListener) {
-        String subExpression = "*";
 
+        String subExpression = "*";
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("订阅成功！ expression: {} ", subExpression);
         }
@@ -72,6 +74,7 @@ public class MQTemplate {
                 mqProperties.getTopic(),
                 subExpression,
                 messageListener);
+
         consumer.start();
     }
 }

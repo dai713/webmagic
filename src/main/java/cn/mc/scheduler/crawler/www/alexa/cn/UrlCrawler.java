@@ -83,7 +83,7 @@ public class UrlCrawler extends BaseCrawler {
         }
 
         if (index >= 100) {
-            System.out.println(JSON.toJSONString(data));
+//            System.out.println(JSON.toJSONString(data));
         }
     }
 

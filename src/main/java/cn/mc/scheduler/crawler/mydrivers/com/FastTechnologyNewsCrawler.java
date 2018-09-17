@@ -28,7 +28,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * 快科技新闻
+ *
+ * @author xl
+ * @date 2018/7/23 下午 15:46
+ */
 @Component
 public class FastTechnologyNewsCrawler extends BaseCrawler {
 
@@ -67,13 +72,22 @@ public class FastTechnologyNewsCrawler extends BaseCrawler {
                 //获取dataId参数
                 List<Selectable> contentNodeList =  nodes.get(0).xpath("//li[@data-id]").nodes();
                 for(Selectable contentNode:contentNodeList){
-                    //获取封面图
-                    String imageUrl=contentNode.xpath("//img/@src").nodes().get(0).toString();
+
                     List<Selectable> spanNodes = contentNode.xpath("//span[@class='newst']").nodes();
-                    //获取标题
-                    String title=spanNodes.get(0).xpath("//a/text()").toString();
-                    //获取链接
-                    String newsSourceUrl=spanNodes.get(0).xpath("//a/@href").toString();
+                    String title;
+                    String newsSourceUrl;
+                    if(spanNodes.size()>0){
+                        //获取标题
+                        title=spanNodes.get(0).xpath("//a/text()").nodes().get(0).toString();
+                        newsSourceUrl=spanNodes.get(0).xpath("//a/@href").toString();
+                    }else{
+                        List<Selectable> thNodes = contentNode.xpath("//span[@class='newstnopic']").nodes();
+                        title=thNodes.get(0).xpath("//a/text()").nodes().get(0).toString();
+                        newsSourceUrl=thNodes.get(0).xpath("//a/@href").toString();
+                    }
+                    if(StringUtils.isEmpty(title)){
+                        continue;
+                    }
                     newsSourceUrl=URL+newsSourceUrl;
                     String dataKey=EncryptUtil.encrypt(newsSourceUrl, "md5");
                     //获取来源
@@ -94,12 +108,17 @@ public class FastTechnologyNewsCrawler extends BaseCrawler {
                     if(!StringUtils.isEmpty(commentCount)){
                         sourceCommentCount=Integer.parseInt(commentCount);
                     }
+                    //获取封面图
+                    List<Selectable> imageUrlList=contentNode.xpath("//img").nodes();
                     List<NewsImageDO> newsImageDOList = new ArrayList<>();
-                    newsImageDOList.add(newsImageCoreManager.buildNewsImageDO(
-                            IDUtil.getNewID(), newsId,
-                            imageUrl, 240, 180,
-                            NewsImageDO.IMAGE_TYPE_MINI));
-                    Integer displayType=NewsDO.DISPLAY_TYPE_ONE_MINI_IMAGE;
+                    for(Selectable selectable:imageUrlList){
+                        String imageUrl=selectable.xpath("//img/@src").toString();
+                        newsImageDOList.add(newsImageCoreManager.buildNewsImageDO(
+                                IDUtil.getNewID(), newsId,
+                                imageUrl, 240, 180,
+                                NewsImageDO.IMAGE_TYPE_MINI));
+                    }
+                    Integer displayType = handleNewsDisplayType(newsImageDOList.size());
                     NewsDO newsDO = newsCoreManager.buildNewsDO(
                             newsId, dataKey, title, newsHot,
                             newsUrl, shareUrl, source, newsSourceUrl,

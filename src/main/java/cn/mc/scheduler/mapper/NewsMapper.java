@@ -6,6 +6,7 @@ import cn.mc.core.mybatis.Field;
 import cn.mc.core.mybatis.Update;
 import cn.mc.core.mysql.DataSource;
 import cn.mc.core.mysql.DataSourceType;
+import cn.mc.scheduler.jobs.rest.CacheClearNewsDO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -80,4 +81,26 @@ public interface NewsMapper {
     List<NewsDO> selectTopCommentSource(
             @Param("newsState") Integer newsState,@Param("newsType") Integer newsType,@Param("fields") Field field
     );
+
+    /**
+     * 新闻视频修复脚本使用
+     *
+     * @param newsType
+     * @param newsSourceUrl
+     * @param page
+     * @param field
+     * @return
+     */
+    List<NewsDO> selectByNewsTypeLikeResourceUrl(
+            @Param("newsType") Integer newsType,
+            @Param("newsSourceUrl") String newsSourceUrl,
+            @Param("page") Page page,
+            @Param("fields") Field field
+    );
+
+    List<CacheClearNewsDO> selectByDataThisWeek();
+
+    void deleteNewsById( @Param("newsId") Long newsId);
+
+    List<NewsDO> selectByDataToday(@Param("newsTypes") List<Integer> newsType,@Param("fields") Field field, @Param("page") Page page);
 }

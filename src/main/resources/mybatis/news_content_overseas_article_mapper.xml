@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.NewsContentOverseasArticleMapper" >
+
+    <!--
+
+        insert 插入
+
+    -->
+    <insert id="insert">
+        insert into news_content_overseas_article
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            ${key}
+        </foreach>
+        VALUES
+        <foreach collection="update.get()" item="value" index="key" separator="," open="(" close=")">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Instant")'>
+                    #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <!--
+
+        updateById 更新根据 id
+
+    -->
+    <update id="updateById">
+        UPDATE news_content_overseas_article
+        SET
+        <foreach collection="update.get()" item="value" index="key" separator=",">
+            <choose>
+                <when test='value.getClass().getName().equals("java.time.Date")'>
+                    ${key} = #{value,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                    ${key} = #{value}
+                </otherwise>
+            </choose>
+        </foreach>
+        WHERE news_content_article_id = #{id}
+    </update>
+
+    <!--
+
+        getByNewsId 根据 newsId
+
+    -->
+    <select id="getByNewsId" resultType="cn.mc.core.dataObject.NewsContentOverseasArticleDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news_content_overseas_article
+        WHERE news_id=#{newsId}
+    </select>
+</mapper>

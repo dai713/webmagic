@@ -2,13 +2,15 @@ package cn.mc.scheduler.util;
 
 import cn.mc.core.dataObject.SystemKeywordsDO;
 import cn.mc.core.dataObject.logs.KeywordsLogsDO;
-import cn.mc.core.utils.*;
+import cn.mc.core.utils.BeanManager;
+import cn.mc.core.utils.IDUtil;
+import cn.mc.core.utils.MD5Util;
 import cn.mc.scheduler.mapper.KeywordsLogsMapper;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
@@ -29,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,13 +51,13 @@ public class SchedulerUtils {
 
     @Autowired
     private RedisTemplate redisTemplate;
-
     @Autowired
     private KeywordsLogsMapper keywordsLogsMapper;
 
     private String replace = "replaceKeywords";
 
     private String matcher = "matcherKeywords";
+
     //获取配置的正则表达式
     private static String REGXPFORTAG = "<\\s*img\\s+([^>]*)\\s*";
     //获取配置的正则表达式
@@ -110,7 +111,6 @@ public class SchedulerUtils {
             if (type.equals(contentType)) {
                 if (!matcher(validateType, keywords, content, newsId, contentType)) {
                     flag = false;
-                    break;
                 } else {
                     return true;
                 }
@@ -285,10 +285,43 @@ public class SchedulerUtils {
     }
 
     /**
+     * 替换所有 空字符、回车、换行
+     *
+     * @param text
+     * @return
+     */
+    public static String filterText(String text) {
+        if (StringUtils.isEmpty(text)) {
+            return text;
+        }
+        return text
+                .replaceAll("\\s|\n|\r|\t", "")
+                // 特殊空格
+                .replaceAll("　", "")
+                .replaceAll("null", "");
+    }
+
+    /**
+     * 过滤 html 内容
+     *
+     *  <p>
+     *      所有没用的样式，script a class style 等属性过滤
+     *  </p>
+     *
+     * @param html
+     * @return
+     */
+    public static String filterHtmlLabel(String html) {
+        return HtmlNodeUtil.htmlFormat(html);
+    }
+
+    /**
      * 内容过滤
      *
      * <strong>
+     * <p>
      * 任何操作失败 返回 null，成功返回新的 content
+     *
      * </strong>
      *
      * @param content
@@ -297,13 +330,20 @@ public class SchedulerUtils {
      */
     public static String contentFilter(@NotNull String content,
                                        @NotNull String source,
+                                       @NotNull String title,
                                        @NotNull Long newsId) {
 
         SchedulerUtils schedulerUtils = BeanManager.getBean(SchedulerUtils.class);
 
+        // 替换内容
         String replaceContent = schedulerUtils
                 .keywordsReplace(content, SystemKeywordsDO.CONTENT_TYPE_TEXT, newsId);
 
+        if (StringUtils.isEmpty(replaceContent)) {
+            return null;
+        }
+
+        // 过滤内容
         boolean contentMatch = schedulerUtils.keywordsMatch(
                 content, SystemKeywordsDO.CONTENT_TYPE_TEXT, newsId);
 
@@ -311,6 +351,7 @@ public class SchedulerUtils {
             return null;
         }
 
+        // 替换内容
         boolean sourceMatch = schedulerUtils.keywordsMatch(
                 source, SystemKeywordsDO.CONTENT_TYPE_SOURCE, newsId);
 
@@ -318,23 +359,43 @@ public class SchedulerUtils {
             return null;
         }
 
-        if (StringUtils.isEmpty(replaceContent)) {
+        // title 来源
+        boolean titleMatch = schedulerUtils.keywordsMatch(
+                title, SystemKeywordsDO.CONTENT_TYPE_TITLE, newsId);
+
+        if (titleMatch) {
             return null;
         }
 
-        // 去前后空格
-        replaceContent = replaceContent.trim();
+        // 检查内容长度，去掉 html 标签检查
+        replaceContent = replaceContent
+                .replaceAll("\n|\r", "")
+                .trim();
+
+        int contentLength = Html.create(replaceContent)
+                .xpath("//allText()")
+                .toString()
+                .replaceAll("\n|\r", "")
+                .length();
+
         // 小于 20 个字符的新闻不要
-        if (replaceContent.length() < 20) {
+        if (contentLength < 20) {
             return null;
         }
+
+        // 去掉所有 a 链接
+        replaceContent = filterHtmlLabel(replaceContent);
+
         //存储对象
         HashMap<String, String> map = new HashMap<>();
+
         //把文章的src替换成md5值
         replaceContent = replaceMD5Img(replaceContent, map);
+
         //调用替换md5值的内容
         replaceContent = schedulerUtils
                 .keywordsReplace(replaceContent, 2, newsId);
+
         //把控制的MD5值去掉
         replaceContent = replaceSrcISNull(replaceContent);
 
@@ -343,11 +404,13 @@ public class SchedulerUtils {
             String values = map.get(keys);
             replaceContent = replaceContent.replaceAll(values, keys);
         }
+
         //去掉body
         if (replaceContent.contains("<body>")) {
             replaceContent = replaceContent.replaceAll("<body>", "");
             replaceContent = replaceContent.replaceAll("</body>", "");
         }
+
         //清除缓存对象
         map.clear();
         return replaceContent;
@@ -379,12 +442,16 @@ public class SchedulerUtils {
                     }
                 }
                 try {
-                    InputStream inputStream=ImgUtil.getInputStream(imgFilterUrl);
+                    InputStream inputStream = ImgUtil.getInputStream(imgFilterUrl);
+                    if (inputStream == null) {
+                        continue;
+                    }
+
                     //将InputStream对象转换成ByteArrayOutputStream
                     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                     byte[] buffer = new byte[1024];
                     int len;
-                    while ((len = inputStream.read(buffer)) > -1 ) {
+                    while ((len = inputStream.read(buffer)) > -1) {
                         byteArrayOutputStream.write(buffer, 0, len);
                     }
                     byteArrayOutputStream.flush();
@@ -394,17 +461,20 @@ public class SchedulerUtils {
                     //获取图片MD5值
                     String imgMD5 = MD5Util.getMD5(inputStreamA);
                     BufferedImage sourceImg = ImageIO.read(inputStreamB);
-                    //如果宽度和高度小于5则直接移除此图片
-                    if(sourceImg.getWidth()<=5 && sourceImg.getHeight()<=5){
-                        elements.remove();
-                        continue;
+                    if (null != sourceImg) {
+                        //如果宽度和高度小于5则直接移除此图片
+                        if (sourceImg.getWidth() <= 5 && sourceImg.getHeight() <= 5) {
+                            elements.remove();
+                            continue;
+                        }
                     }
+
                     map.put(imgFilterUrl, imgMD5);
                     elements.attr("src", imgMD5);
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    log.error("md5 替换异常! \n {}", ExceptionUtils.getStackTrace(e));
-                    return replaceContent;
+//                    log.error("md5 替换异常! \n {}", ExceptionUtils.getStackTrace(e));
+//                    return replaceContent;
+                    // skip
                 }
             }
         }
@@ -450,7 +520,7 @@ public class SchedulerUtils {
      * @return
      * @throws IOException
      */
-    public Map parseImg(String imgUrl) {
+    public Map<String, Integer> parseImg(String imgUrl) {
         if (StringUtils.isEmpty(imgUrl)) {
             return null;
         }
@@ -477,5 +547,25 @@ public class SchedulerUtils {
                 connection.disconnect();
             }
         }
+    }
+
+    /**
+     * 获取缓存数据做对比
+     *
+     * @param cache 缓存数据
+     * @param key
+     */
+    public boolean getCacheData(String cache, String key) {
+        JSONArray cacheArray = JSON.parseArray(cache);
+        boolean flag = false;
+        for (int j = 0; j < cacheArray.size(); j++) {
+            JSONObject jObject = cacheArray.getJSONObject(j);
+            String datakey = jObject.getString("dataKey");
+            if (datakey.equals(key)) {
+                flag = true;
+                break;
+            }
+        }
+        return flag;
     }
 }

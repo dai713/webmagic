@@ -82,6 +82,9 @@ public class WangYiSprotCrawler extends BaseCrawler {
                 }
                 //标题
                 Object title = jsonDataObject.get("title");
+                if(title.toString().equals("视频直播")){
+                    continue;
+                }
                 //dataKey
                 String dataKey = EncryptUtil.encrypt(String.valueOf(newsSourceUrl), "md5");
                 //描述
@@ -118,7 +121,7 @@ public class WangYiSprotCrawler extends BaseCrawler {
                 Object time= jsonDataObject.get("ptime");
                 if(!StringUtils.isEmpty(time)){
                     displayTime = DateUtil.parse(
-                            String.valueOf(true), "yyyy-MM-dd HH:mm:ss");
+                            String.valueOf(time), "yyyy-MM-dd HH:mm:ss");
                 }
                 String newsUrl = "";
                 String shareUrl = "";

@@ -9,6 +9,7 @@ import cn.mc.scheduler.mapper.NewsImageMapper;
 import cn.mc.scheduler.mapper.NewsMapper;
 import cn.mc.scheduler.mq.MQTemplate;
 import cn.mc.scheduler.util.AliyunOSSClientUtil;
+import cn.mc.scheduler.util.CrawlerUtil;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,16 +34,22 @@ public class VideoCrawlerPipeline {
     private AliyunOSSClientUtil aliyunOSSClientUtil;
     @Autowired
     private MQTemplate mqTemplate;
-
+    @Autowired
+    private CrawlerUtil crawlerUtil;
     @Transactional
     public synchronized void saveVideo(NewsDO newsDO, NewsContentVideoDO newsContentVideoDO, VideoCrawlerVO videoCrawlerVO) {
         // 保存信息
         newsDO.setNewsState(NewsDO.STATE_NOT_RELEASE);
         newsMapper.insert(Update.copyWithoutNull(newsDO));
+        //添加新闻缓存时间 用来监控
+        crawlerUtil.addNewsTime(this.getClass().getSimpleName()+newsDO.getNewsType());
+
         //上传阿里云替换成我们图片地址
         newsContentVideoDO.setVideoImage(aliyunOSSClientUtil.replaceSourcePicToOSS(newsContentVideoDO.getVideoImage()));
 
         newsContentVideoMapper.insert(Update.copyWithoutNull(newsContentVideoDO));
+
+
         List<NewsImageDO> newsImageDOList = videoCrawlerVO.getNewsImageDOList();
         for (NewsImageDO newsImageDO : newsImageDOList) {
             //上传阿里云替换成我们图片地址

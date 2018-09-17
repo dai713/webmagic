@@ -1,11 +1,6 @@
 package cn.mc.scheduler.crawler;
 
 import cn.mc.core.dataObject.NewsDO;
-import cn.mc.core.dataObject.SystemKeywordsDO;
-import cn.mc.core.utils.EncryptUtil;
-import cn.mc.scheduler.util.SchedulerUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.utils.FilePersistentBase;
@@ -40,12 +35,12 @@ public abstract class CrawlerSupport extends FilePersistentBase {
     public static final String USER_AGENT_IPHONE_OS = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) " +
             "AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1";
 
+    public static final String USER_AGENT_ANDROID_OS = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Mobile Safari/537.36";
+
+
     public static final String NEED_SAVE_KEY = "NEED_SAVE";
     public static final String NEED_SAVE_YES = "YES";
     public static final String NEED_SAVE_NO = "NO";
-
-    @Autowired
-    private SchedulerUtils schedulerUtils;
 
     protected boolean isNeedSave(ResultItems resultItems) {
         if (NEED_SAVE_YES.equals(resultItems.get(NEED_SAVE_KEY)))
@@ -56,7 +51,6 @@ public abstract class CrawlerSupport extends FilePersistentBase {
     protected void setNeedSaveWithYes(Page page) {
         page.putField(NEED_SAVE_KEY, NEED_SAVE_YES);
     }
-
 
     protected String findRegex(String content, String regex) {
         Pattern pa = Pattern.compile(regex, Pattern.CANON_EQ);
@@ -190,9 +184,6 @@ public abstract class CrawlerSupport extends FilePersistentBase {
 
 
     public static Integer handleVideoDisplayType() {
-//        return (int)(Math.random() * 2) == 0 ?
-//                NewsDO.DISPLAY_TYPE_ONE_LARGE_IMAGE
-//                : NewsDO.DISPLAY_TYPE_ONE_MINI_IMAGE;
         return NewsDO.DISPLAY_TYPE_ONE_LARGE_IMAGE;
     }
 

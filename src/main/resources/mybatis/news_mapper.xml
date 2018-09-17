@@ -125,5 +125,53 @@
            ORDER BY add_time desc LIMIT 20
     </select>
 
+    <!--
 
+        修复数据使用
+
+    -->
+    <select id="selectByNewsTypeLikeResourceUrl" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        WHERE news_type=#{newsType}
+        <bind name="pattern" value="newsSourceUrl + '%'" />
+        AND news_source_url LIKE #{pattern}
+        ORDER BY add_time DESC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
+
+    <!--
+    根据单个： dataKeys 查询新闻 并且 > addTime
+-->
+    <select id="selectByDataThisWeek" resultType="cn.mc.scheduler.jobs.rest.CacheClearNewsDO">
+        SELECT
+          t1.news_id as newsId,t1.image_url as imageUrl,t2.news_type as newsType
+        FROM  news_image t1 LEFT JOIN news t2 on t1.news_id=t2.news_id WHERE DATE_SUB(CURDATE(), INTERVAL 7 DAY) <![CDATA[<= ]]> date(t2.add_time)
+    </select>
+
+    <delete id="deleteNewsById">
+         DELETE FROM news WHERE news_id=#{newsId};
+         DELETE FROM news_image WHERE news_id=#{newsId};
+          DELETE FROM news_content_article WHERE news_id=#{newsId};
+    </delete>
+
+    <select id="selectByDataToday" resultType="cn.mc.core.dataObject.NewsDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM news
+        WHERE news_type IN
+        <foreach collection="newsTypes" item="newsType" index="index"
+                 open="(" close=")" separator=",">
+            #{newsType}
+        </foreach>
+        AND to_days(add_time) = to_days(now())
+        AND news_state in (0,4)
+        ORDER BY add_time DESC
+        LIMIT #{page.offset}, #{page.rows}
+    </select>
 </mapper>

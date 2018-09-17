@@ -12,14 +12,18 @@ import cn.mc.core.utils.IDUtil;
 import cn.mc.scheduler.base.BaseSpider;
 import cn.mc.scheduler.crawler.BaseCrawler;
 import cn.mc.scheduler.util.AliyunOSSClientUtil;
+import cn.mc.scheduler.util.RedisUtil;
+import cn.mc.scheduler.util.SchedulerUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -28,6 +32,7 @@ import us.codecraft.webmagic.Spider;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 
@@ -53,6 +58,10 @@ public class WangYiVideoCrawler extends BaseCrawler {
     private NewsCoreManager newsCoreManager;
     @Autowired
     private WangYiVideoPipeline wangyiVideoPipeline;
+    @Autowired
+    private SchedulerUtils schedulerUtils;
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public Spider createCrawler() {
@@ -60,6 +69,7 @@ public class WangYiVideoCrawler extends BaseCrawler {
                 "&passport=&devId=IIuuXb/hLUSPTntXq4kI%2BoRnb0c8Tfr%2BE7bHyJYx5KpjHUvhlNSkVu2N48qn/bQm" +
                 "&version=37.1&spever=false&net=wifi&lat=&lon=&ts=1528438782&sign=zREo9KopFt13hDOFqafmK/2k" +
                 "FOAo4Ae06gt1Dt6iGkt48ErR02zJ6/KXOnxX046I&encryption=1&canal=appstore&offset=0&size=10&fn=9";
+
 
         BaseSpider spider = new BaseSpider(this);
         spider.addRequest(new Request().setUrl(VIDEO_URL));
@@ -70,18 +80,33 @@ public class WangYiVideoCrawler extends BaseCrawler {
     public synchronized void process(Page page) {
 
         try {
+            String wangyi_video = "WANGYI_VIDEO";
+
             String pageUrl = String.valueOf(page.getUrl());
             JSONObject jsonObject = JSON.parseObject(page.getRawText());
             JSONArray data = jsonObject.getJSONArray("视频");
-            Map<Long, NewsContentVideoDO> videoMap = Maps.newHashMap();
-            Map<Long, NewsDO> newsMap = Maps.newHashMap();
-            Map<Long, NewsImageDO> newsImageMap = Maps.newHashMap();
+            String cache = (String) redisUtil.get(wangyi_video);
+
+            List<NewsDO> list = Lists.newArrayList();
+            Map<String, NewsContentVideoDO> videoMap = Maps.newHashMap();
+            Map<String, NewsDO> newsMap = Maps.newHashMap();
+            Map<String, NewsImageDO> newsImageMap = Maps.newHashMap();
+
             for (int i = 0; i < data.size(); i++) {
                 Long newsId = IDUtil.getNewID();
                 Long newsContentVideoId = IDUtil.getNewID();
 
                 JSONObject obj = data.getJSONObject(i);
-                String dataKey = this.encrypt(String.valueOf(IDUtil.getNewID()));
+                String replyid = obj.getString("replyid");
+                String key = this.encrypt(replyid);
+
+                if (!StringUtils.isEmpty(cache)) {
+                    boolean matchedResult = schedulerUtils.getCacheData(cache, key);
+                    if (matchedResult) {
+                        continue;
+                    }
+                }
+
                 URL url = new URL(obj.getString("mp4_url"));
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setConnectTimeout(5000);
@@ -102,6 +127,7 @@ public class WangYiVideoCrawler extends BaseCrawler {
 
                 String newsSource = obj.getString("videosource");
                 String newsSourceUrl = pageUrl;
+                String dataKey = this.encrypt(replyid);
 
                 int newsType = NewsDO.NEWS_TYPE_VIDEO;
                 int contentType = NewsDO.CONTENT_TYPE_VIDEO;
@@ -136,6 +162,8 @@ public class WangYiVideoCrawler extends BaseCrawler {
                         newsType, contentType, keywords, banComment, newsAbstract,
                         displayTime, videoCount, imageCount, createTime, displayType,
                         sourceCommentCount, commentCount);
+                list.add(newsDO);
+                newsMap.put(dataKey, newsDO);
 
                 // 封装视频对象
                 String videoUrl = "";
@@ -152,17 +180,22 @@ public class WangYiVideoCrawler extends BaseCrawler {
                         newsContentVideoId, newsId, dataKey, videoUrl, fileUrl, durationTime,
                         videoFormat, videoIntroduce, videoImage, videoImageWidth,
                         videoImageHeight, authAccess, videoSize);
+                videoMap.put(dataKey, videoDO);
+
 
                 // news image
                 NewsImageDO newsImageDO = newsImageCoreManager.buildNewsImageDO(
                         IDUtil.getNewID(), newsId, videoImage, videoImageWidth,
                         videoImageHeight, NewsImageDO.IMAGE_TYPE_LARGE);
+                newsImageMap.put(dataKey, newsImageDO);
 
-                newsMap.put(newsId, newsDO);
-                newsImageMap.put(newsId, newsImageDO);
-                videoMap.put(newsId, videoDO);
+                wangyiVideoPipeline.save(newsMap, newsImageMap, videoMap);
             }
-            wangyiVideoPipeline.save(newsMap, newsImageMap, videoMap);
+
+            redisUtil.remove(wangyi_video);
+            redisUtil.setString(wangyi_video, JSON.toJSONString(list));
+
+
         } catch (Exception e) {
             logger.error("抓取网易视频失败{}：", e);
         }

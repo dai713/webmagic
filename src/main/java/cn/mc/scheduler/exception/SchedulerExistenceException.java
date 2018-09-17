@@ -1,13 +1,13 @@
 package cn.mc.scheduler.exception;
 
-import cn.mc.core.exception.SchedulerNewException;
+import cn.mc.core.exception.SchedulerException;
 import cn.mc.scheduler.constants.SchedulerCodeConstants;
 
 /**
  * @auther sin
  * @time 2018/2/5 15:32
  */
-public class SchedulerExistenceException extends SchedulerNewException  {
+public class SchedulerExistenceException extends SchedulerException {
 
     /**
      * 构造器

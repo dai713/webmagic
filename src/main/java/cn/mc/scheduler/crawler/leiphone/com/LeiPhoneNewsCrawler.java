@@ -24,7 +24,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
+/**
+ * 雷锋网新闻
+ *
+ * @author xl
+ * @date 2018/7/23 下午 15:46
+ */
 @Component
 public class LeiPhoneNewsCrawler extends BaseCrawler {
 
@@ -59,26 +64,26 @@ public class LeiPhoneNewsCrawler extends BaseCrawler {
             Html html = page.getHtml();
             //获取列表
             List<Selectable> nodes = html.xpath("//div[@class='article-list']").nodes();
-            if(!CollectionUtils.isEmpty(nodes)){
+            if (!CollectionUtils.isEmpty(nodes)) {
                 //获取li对象参数
-                List<Selectable> contentNodeList =  nodes.get(0).xpath("//li").nodes();
-                for(Selectable contentNode:contentNodeList){
+                List<Selectable> contentNodeList = nodes.get(0).xpath("//li").nodes();
+                for (Selectable contentNode : contentNodeList) {
                     //获取封面图
-                    String imageUrl=contentNode.xpath("//div[@class='imgs']/img/@data-lazy").nodes().get(0).toString();
+                    String imageUrl = contentNode.xpath("//div[@class='imgs']/img/@data-lazy").nodes().get(0).toString();
                     List<Selectable> titleNodes = contentNode.xpath("//div[@class='tit']/text()").nodes();
                     //获取标题
-                    String title=titleNodes.get(0).toString();
+                    String title = titleNodes.get(0).toString();
                     //获取链接
-                    String newsSourceUrl=contentNode.xpath("//a/@href").toString();
-                    String dataKey= EncryptUtil.encrypt(newsSourceUrl, "md5");
+                    String newsSourceUrl = contentNode.xpath("//a/@href").toString();
+                    String dataKey = EncryptUtil.encrypt(newsSourceUrl, "md5");
                     //获取来源
-                    String source=contentNode.xpath("//span[@class='aut']/text()").nodes().get(0).toString();
+                    String source = contentNode.xpath("//span[@class='aut']/text()").nodes().get(0).toString();
                     //获取关键字
-                    String keywords=contentNode.xpath("//span[@class='tag']/text()").nodes().get(0).toString();
-                    if(!StringUtils.isEmpty(keywords)){
+                    String keywords = contentNode.xpath("//span[@class='tag']/text()").nodes().get(0).toString();
+                    if (!StringUtils.isEmpty(keywords)) {
                         //AI开发的丢弃
-                        if(keywords.contains("AI开发")){
-                             continue;
+                        if (keywords.contains("AI开发")) {
+                            continue;
                         }
                     }
                     //新闻Id
@@ -86,16 +91,16 @@ public class LeiPhoneNewsCrawler extends BaseCrawler {
                     String newsUrl = "";
                     String shareUrl = "";
                     //是否禁止评论 0允许
-                    Integer banComment=0;
+                    Integer banComment = 0;
                     Integer newsHot = 0;
                     Integer videoCount = 0;
-                    Integer sourceCommentCount=0;
+                    Integer sourceCommentCount = 0;
                     List<NewsImageDO> newsImageDOList = new ArrayList<>();
                     newsImageDOList.add(newsImageCoreManager.buildNewsImageDO(
                             IDUtil.getNewID(), newsId,
                             imageUrl, 0, 0,
                             NewsImageDO.IMAGE_TYPE_MINI));
-                    Integer displayType=NewsDO.DISPLAY_TYPE_ONE_MINI_IMAGE;
+                    Integer displayType = NewsDO.DISPLAY_TYPE_ONE_MINI_IMAGE;
                     NewsDO newsDO = newsCoreManager.buildNewsDO(
                             newsId, dataKey, title, newsHot,
                             newsUrl, shareUrl, source, newsSourceUrl,
@@ -112,8 +117,8 @@ public class LeiPhoneNewsCrawler extends BaseCrawler {
                     page.addTargetRequest(request);
                 }
             }
-        }else{
-            String url= String.valueOf(page.getUrl());
+        } else {
+            String url = String.valueOf(page.getUrl());
             Html html = page.getHtml();
             String dataKey = EncryptUtil.encrypt(url, "md5");
             List<Selectable> nodes = html.xpath("//div[@class='details lph-article-comView']").nodes();
@@ -126,29 +131,30 @@ public class LeiPhoneNewsCrawler extends BaseCrawler {
             }
 
             //把所有的a标签的换成div
-            content=content.replaceAll("<a","<div");
-            content=content.replaceAll("a>","div>");
+            content = content.replaceAll("<a", "<div");
+            content = content.replaceAll("a>", "div>");
             List<Selectable> timeNodes = html.xpath("//div[@class='time fr']/text()").nodes();
-            String time =timeNodes.get(0).toString().trim();
-            time=time.replaceAll("/","-");
-            time=time+":00";
+            String time = timeNodes.get(0).toString().trim();
+            time = time.replaceAll("/", "-");
+            time = time + ":00";
             //发布时间
             Date displayTime = null;
             try {
-                displayTime=DateUtil.parse(time,DateUtil.DATE_FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND2);
-            }catch (Exception ex){
+                displayTime = DateUtil.parse(time, DateUtil.DATE_FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND2);
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
             // 获取新闻
             NewsDO newsDO = cacheNewsDO.get(dataKey);
-            if(null!=newsDO){
+            if (null != newsDO) {
                 newsDO.setDisplayTime(displayTime);
-                leiPhoneTechnologyNewsCrawlerPipeline.saveLeiPhoneTechnologyNews(dataKey,newsDO,cacheNewsImageDO,content);
+                leiPhoneTechnologyNewsCrawlerPipeline.saveLeiPhoneTechnologyNews(dataKey, newsDO, cacheNewsImageDO, content);
             }
 
         }
 
     }
+
     @Override
     public Site getSite() {
         return site;

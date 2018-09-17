@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.mc.scheduler.mapper.PushMapper" >
+
+    <select id="selectTimePush" resultType="cn.mc.core.dataObject.PushInfoDO">
+        SELECT
+        <foreach collection="fields.get()" separator="," item="field">
+            ${field}
+        </foreach>
+        FROM push_info
+        WHERE <![CDATA[task_time <= date_sub(sysdate(),interval 0 minute) ]]> and status=1
+    </select>
+
+    <update id="updatePushStatus">
+        UPDATE push_info
+        SET
+        status=0
+        WHERE push_id = #{pushId}
+    </update>
+</mapper>

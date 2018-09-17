@@ -14,6 +14,7 @@ import cn.mc.scheduler.mapper.NewsImageMapper;
 import cn.mc.scheduler.mapper.NewsMapper;
 import cn.mc.scheduler.mq.MQTemplate;
 import cn.mc.scheduler.util.AliyunOSSClientUtil;
+import cn.mc.scheduler.util.CrawlerUtil;
 import cn.mc.scheduler.util.SchedulerUtils;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,8 @@ public class WangYiSportPipeline {
     private MQTemplate mqTemplate;
     @Autowired
     private CrawlerManager crawlerManager;
-
+    @Autowired
+    private CrawlerUtil crawlerUtil;
     private static int size = 0;
 
     @Transactional
@@ -54,23 +56,23 @@ public class WangYiSportPipeline {
         if (!cacheNewsDO.containsKey(dataKey)) {
             return;
         }
-
+        // 检查数据库是否存在 新闻
+        NewsDO dataBaseNewsDO = crawlerManager.getNewsDOByDataKey(
+                dataKey, new Field("newsId"));
+        if (dataBaseNewsDO != null) {
+            return;
+        }
         // 获取新闻
         NewsDO newsDO = cacheNewsDO.get(dataKey);
 
         // 过滤数据
         articleContent = SchedulerUtils.contentFilter(
-                articleContent, newsDO.getNewsSource(),newsDO.getNewsId());
+                articleContent, newsDO.getNewsSource(),newsDO.getTitle(),newsDO.getNewsId());
 
         if (StringUtils.isEmpty(articleContent))
             return;
 
-        // 检查数据库是否存在 新闻
-        NewsDO dataBaseNewsDO = crawlerManager.listNewsDOByDataKey(
-                dataKey, new Field("newsId"));
-        if (dataBaseNewsDO != null) {
-            return;
-        }
+
         // 获取新闻图片
         List<NewsImageDO> newsImageDOList = cacheNewsImageDO.get(dataKey);
 
@@ -83,7 +85,8 @@ public class WangYiSportPipeline {
         newsContentArticleMapper.insert(Update.copyWithoutNull(contentArticleDO));
         newsDO.setNewsState(NewsDO.STATE_NOT_RELEASE);
         newsMapper.insert(Update.copyWithoutNull(newsDO));
-
+        //添加新闻缓存时间 用来监控
+        crawlerUtil.addNewsTime(this.getClass().getSimpleName()+newsDO.getNewsType());
         // 新闻 image
         for (NewsImageDO newsImageDO : newsImageDOList) {
             //上传阿里云替换成我们图片地址

@@ -29,7 +29,12 @@ import us.codecraft.webmagic.selector.Selectable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
+/**
+ * 新浪军事新闻
+ *
+ * @author xl
+ * @date 2018/7/23 下午 15:46
+ */
 @Component
 public class SinaMilitaryCrawler extends BaseCrawler {
 
@@ -54,15 +59,14 @@ public class SinaMilitaryCrawler extends BaseCrawler {
 
     private Long timeMillis;
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
+    private  String initUrl;
     @Override
     public Spider createCrawler() {
         timeMillis=System.currentTimeMillis()/1000;
         StringBuffer urlStr=new StringBuffer(URL);
         urlStr.append(timeMillis).append("&callback=Zepto").append(timeMillis);
-        URL=urlStr.toString();
-        Request request = new Request(URL);
+        initUrl=urlStr.toString();
+        Request request = new Request(initUrl);
         request.addHeader(HEADER_USER_AGENT_KEY, USER_AGENT_IPHONE_OS);
         request.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
         request.addHeader("Accept-Encoding", "gzip, deflate, br");
@@ -80,7 +84,7 @@ public class SinaMilitaryCrawler extends BaseCrawler {
 
     @Override
     public void process(Page page) {
-        if (URL.contains(page.getUrl().toString())) {
+        if (initUrl.contains(page.getUrl().toString())) {
             String jsonReturn = page.getRawText();
             if (!StringUtils.isEmpty(jsonReturn)) {
                 String jsonStr = jsonReturn.replaceAll("Zepto" + timeMillis, "");
@@ -182,8 +186,8 @@ public class SinaMilitaryCrawler extends BaseCrawler {
                     Object time1 = jsonDataObject.get("ctime");
                     if (!StringUtils.isEmpty(time)) {
                         try {
-                            displayTime = sdf.parse(sdf.format(new Date(Long.parseLong(time.toString()) * 1000)));
-                        } catch (ParseException e) {
+                            displayTime=new Date(Long.parseLong(time.toString())*1000);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     } else {
@@ -191,8 +195,8 @@ public class SinaMilitaryCrawler extends BaseCrawler {
                     }
                     if (!StringUtils.isEmpty(time1)) {
                         try {
-                            createTime = sdf.parse(sdf.format(new Date(Long.parseLong(time1.toString()) * 1000)));
-                        } catch (ParseException e) {
+                            createTime=new Date(Long.parseLong(time1.toString())*1000);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     } else {
